@@ -3,7 +3,7 @@
 
 const Stripe = require('stripe');
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_51TGmqxAoFQG1HeY0jehA71wuD7bE77nrlL49XHExhdr9Z4OZthEVFQLEd5BmPlVuoNaYaJTS1yVF3JSTeFUMn3TL00YwbTD4Zi');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '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');
 
 // ============================================================
 // 🔧 PRODUKTE & PREISE – hier anpassen
