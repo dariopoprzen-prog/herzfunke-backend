@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Herzfunke Admin</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0b14; color:#e9e8f3; }
+    header { padding:16px 18px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:12px; align-items:center; }
+    header h1 { margin:0; font-size:16px; font-weight:650; letter-spacing:.2px; }
+    .wrap { display:grid; grid-template-columns: 360px 1fr; height: calc(100vh - 58px); }
+    .panel { border-right:1px solid rgba(255,255,255,.08); overflow:auto; }
+    .panel .bar { padding:12px; position:sticky; top:0; background:#0b0b14; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:8px; }
+    .panel .bar2 { padding:10px 12px; position:sticky; top:58px; background:#0b0b14; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:8px; }
+    input, button, select, textarea { background:#141427; border:1px solid rgba(255,255,255,.10); color:#e9e8f3; border-radius:10px; padding:10px 12px; font-size:13px; }
+    button { cursor:pointer; border:none; background: linear-gradient(135deg,#ff5f8a,#d9437a); font-weight:650; }
+    button.secondary { background:#141427; border:1px solid rgba(255,255,255,.10); font-weight:600; }
+    .list { padding:10px; display:flex; flex-direction:column; gap:8px; }
+    .user { padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background: rgba(255,255,255,.03); cursor:pointer; }
+    .user.active { outline: 2px solid rgba(255,95,138,.55); }
+    .user .top { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .user .name { font-weight:700; font-size:13px; }
+    .user .meta { font-size:12px; color: rgba(233,232,243,.7); margin-top:4px; }
+    .main { display:flex; flex-direction:column; min-width:0; }
+    .chatHead { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; gap:10px; }
+    .chatHead .title { font-weight:750; }
+    .msgs { flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+    .msg { max-width: 72%; }
+    .msg.me { align-self:flex-end; }
+    .bubble { padding:10px 12px; border-radius:14px; background:#1a1930; border:1px solid rgba(255,255,255,.08); }
+    .msg.me .bubble { background: linear-gradient(135deg,#ff5f8a,#d9437a); border:none; }
+    .time { font-size:11px; color: rgba(233,232,243,.55); margin-top:4px; padding:0 4px; }
+    .composer { border-top:1px solid rgba(255,255,255,.08); padding:10px; display:flex; gap:8px; }
+    .composer textarea { flex:1; resize:none; height:42px; border-radius:12px; }
+    .hint { color: rgba(233,232,243,.65); font-size:12px; padding: 0 14px 12px; }
+    .toastWrap { position: fixed; right: 14px; top: 72px; display:flex; flex-direction:column; gap:10px; z-index: 9999; width: min(420px, calc(100vw - 28px)); }
+    .toast { padding: 12px 12px; border-radius: 14px; background: rgba(20,20,39,0.95); border: 1px solid rgba(255,255,255,.10); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
+    .toast .t { font-weight: 800; font-size: 13px; }
+    .toast .b { font-size: 12px; color: rgba(233,232,243,.75); margin-top: 6px; }
+    .toast .actions { display:flex; gap:8px; margin-top: 10px; }
+    .toast .actions button { padding: 8px 10px; border-radius: 10px; font-size: 12px; }
+    .toast .actions button.secondary { background:#141427; border:1px solid rgba(255,255,255,.10); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Herzfunke Admin</h1>
+    <span id="status" style="font-size:12px;color:rgba(233,232,243,.7)"></span>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="bar">
+        <input id="token" placeholder="Admin Token (hf_token)" style="flex:1" />
+        <button class="secondary" id="btnLoad">Laden</button>
+      </div>
+      <div class="bar2">
+        <select id="filterManaged" style="flex:1">
+          <option value="all">Alle Profile</option>
+          <option value="managed">Nur betreute Profile</option>
+        </select>
+        <input id="q" placeholder="Suche (Name/City/ID)" style="flex:1" />
+      </div>
+      <div class="list" id="users"></div>
+    </div>
+
+    <div class="main">
+      <div class="chatHead">
+        <div>
+          <div class="title" id="chatTitle">Kein Nutzer ausgewählt</div>
+          <div style="font-size:12px;color:rgba(233,232,243,.65)" id="chatSub"></div>
+        </div>
+        <div>
+          <button class="secondary" id="btnRefresh">Refresh</button>
+          <button class="secondary" id="btnManaged">Betreut an/aus</button>
+        </div>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:1fr 1fr;gap:8px" id="editBox">
+        <input id="eName" placeholder="Name" />
+        <input id="eAge" placeholder="Alter" type="number" min="18" max="99" />
+        <input id="eCity" placeholder="Stadt" />
+        <input id="eCoins" placeholder="Coins" type="number" min="0" />
+        <input id="ePhoto" placeholder="Foto URL" />
+        <select id="ePremium">
+          <option value="0">Premium: nein</option>
+          <option value="1">Premium: ja</option>
+        </select>
+        <select id="eTier">
+          <option value="">Tier: —</option>
+          <option value="small">small</option>
+          <option value="big">big</option>
+        </select>
+        <input id="eInterests" placeholder="Interessen (kommagetrennt)" style="grid-column:1/-1" />
+        <textarea id="eBio" placeholder="Bio" style="grid-column:1/-1;height:68px"></textarea>
+        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button class="secondary" id="btnApply">Änderungen speichern</button>
+        </div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="hint">Du schreibst als Admin-Account an den Nutzer (Match wird automatisch erstellt, falls nicht vorhanden).</div>
+      <div class="composer">
+        <textarea id="text" placeholder="Antwort schreiben…"></textarea>
+        <button id="send">Senden</button>
+      </div>
+    </div>
+  </div>
+  <div class="toastWrap" id="toasts"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const API = `${window.location.origin}/api`;
+    let activeUser = null;
+    let activeMatchId = null;
+    let adminId = null;
+    let socket = null;
+
+    function authHeaders() {
+      const t = document.getElementById('token').value.trim();
+      return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${t}` };
+    }
+    function setStatus(s) { document.getElementById('status').textContent = s; }
+    function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function fmt(ts){
+      try { return new Date(ts).toLocaleString('de-DE', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' }); }
+      catch { return ''; }
+    }
+
+    function showToast(title, body, onOpen) {
+      const wrap = document.getElementById('toasts');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = `
+        <div class="t">${esc(title)}</div>
+        <div class="b">${esc(body || '')}</div>
+        <div class="actions">
+          <button class="secondary">Schließen</button>
+          <button>Öffnen</button>
+        </div>
+      `;
+      const [btnClose, btnOpen] = el.querySelectorAll('button');
+      btnClose.onclick = () => el.remove();
+      btnOpen.onclick = async () => { try { await onOpen?.(); } finally { el.remove(); } };
+      wrap.prepend(el);
+      setTimeout(() => { try { el.remove(); } catch {} }, 12000);
+    }
+
+    function ensureSocket() {
+      const t = document.getElementById('token').value.trim();
+      if (!t) return;
+      if (socket) return;
+      if (!window.io) return;
+      socket = window.io({ auth: { token: t } });
+      socket.on('connect', () => setStatus('Live verbunden ✓'));
+      socket.on('connect_error', () => setStatus('Live Verbindung fehlgeschlagen'));
+      socket.on('managed_message', async (payload) => {
+        try {
+          const msg = payload?.message;
+          if (!msg) return;
+          const fromId = Number(payload?.fromUserId || msg.sender_id);
+          const toId = Number(payload?.toUserId || 0);
+          const matchId = Number(payload?.matchId || 0);
+
+          // Wenn offen: sofort refresh
+          if (activeMatchId && matchId && Number(matchId) === Number(activeMatchId)) {
+            await loadConversation();
+            return;
+          }
+
+          const fromUser = (window.__usersCache || []).find(u => Number(u.id) === fromId);
+          const who = fromUser ? `${fromUser.name} (#${fromUser.id})` : `User #${fromId}`;
+          showToast('Neue Nachricht', `${who}: ${String(msg.text || '').slice(0, 120)}`, async () => {
+            if (fromUser) await selectUser(fromUser);
+            else {
+              // fallback: reload users and try again
+              await loadUsers();
+              const u2 = (window.__usersCache || []).find(u => Number(u.id) === fromId) || (window.__usersCache || []).find(u => Number(u.id) === toId);
+              if (u2) await selectUser(u2);
+            }
+          });
+        } catch {}
+      });
+    }
+
+    async function loadUsers() {
+      const t = document.getElementById('token').value.trim();
+      if (!t) {
+        setStatus('Bitte Token einfügen (hf_token)');
+        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">Kein Token gesetzt.<br><br>Öffne zuerst die normale Seite, logge dich ein und öffne dann <code>admin.html</code> erneut (Token wird automatisch übernommen), oder füge <code>hf_token</code> manuell ein.</div>`;
+        return;
+      }
+
+      setStatus('Prüfe Admin-Recht…');
+      // Admin-Info laden (damit Socket im Admin-Room landet)
+      try {
+        const rMe = await fetch(`${API}/admin/me`, { headers: authHeaders() });
+        const me = await rMe.json().catch(() => ({}));
+        if (!rMe.ok) {
+          const msg = (me && me.message) ? me.message : `Fehler (${rMe.status})`;
+          setStatus(msg);
+          document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Fix: Starte den Server mit <code>ADMIN_USER_ID</code> (deine User-ID) oder setze bei deinem User <code>is_admin=1</code>.</div>`;
+          return;
+        }
+        adminId = me?.user?.id || null;
+      } catch (e) {
+        setStatus('API nicht erreichbar');
+        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">API nicht erreichbar.<br><br>Öffne <code>admin.html</code> über die gleiche Domain wie die App (nicht als <code>file://</code>).</div>`;
+        return;
+      }
+      ensureSocket();
+      setStatus('Lade Profile…');
+      const res = await fetch(`${API}/admin/users`, { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = (data && data.message) ? data.message : `Fehler (${res.status})`;
+        setStatus(msg);
+        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Hinweis: Du brauchst Admin-Rechte (ENV <code>ADMIN_USER_ID</code> oder <code>is_admin=1</code>) und einen gültigen <code>hf_token</code>.</div>`;
+        return;
+      }
+      window.__usersCache = Array.isArray(data) ? data : [];
+      const filter = document.getElementById('filterManaged').value;
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      const list = window.__usersCache.filter(u => {
+        if (filter === 'managed' && !u.is_managed) return false;
+        if (!q) return true;
+        const hay = `${u.id} ${u.name||''} ${u.city||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+      const wrap = document.getElementById('users');
+      wrap.innerHTML = '';
+      list.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user' + (activeUser?.id === u.id ? ' active' : '');
+        div.innerHTML = `
+          <div class="top">
+            <div class="name">${esc(u.name)} <span style="opacity:.6;font-weight:600">#${u.id}</span></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="font-size:11px;color:rgba(233,232,243,.6)">${u.is_online ? '● online' : ''}</div>
+              <button class="secondary" data-del="1" style="padding:7px 10px;border-radius:10px;font-size:12px">Löschen</button>
+            </div>
+          </div>
+          <div class="meta">${esc(u.city || '')} · Coins: ${u.coins ?? 0} · Premium: ${u.is_premium ? (u.premium_tier||'ja') : 'nein'} · Betreut: ${u.is_managed ? 'ja' : 'nein'}</div>
+        `;
+        div.onclick = (e) => {
+          if (e?.target?.dataset?.del) return;
+          selectUser(u);
+        };
+        div.querySelector('button[data-del="1"]').onclick = async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (!confirm(`Profil wirklich löschen?\n\n${u.name} (#${u.id})`)) return;
+          const r = await fetch(`${API}/admin/users/${u.id}`, { method: 'DELETE', headers: authHeaders() });
+          const out = await r.json().catch(() => ({}));
+          if (!r.ok) { setStatus(out?.message || 'Fehler'); return; }
+          if (activeUser?.id === u.id) { activeUser = null; activeMatchId = null; document.getElementById('msgs').innerHTML=''; }
+          await loadUsers();
+          setStatus('Gelöscht ✓');
+        };
+        wrap.appendChild(div);
+      });
+      if (!list.length) {
+        wrap.innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">0 Profile gefunden.<br><br>Wenn du sicher bist, dass Nutzer existieren: prüfe, ob du auf der richtigen Datenbank bist (Render vs lokal) und ob du <code>admin.html</code> über die Server-URL öffnest.</div>`;
+      }
+      setStatus(`Profile: ${list.length}`);
+    }
+
+    async function selectUser(u) {
+      activeUser = u;
+      activeMatchId = null;
+      document.getElementById('chatTitle').textContent = `${u.name} (#${u.id})`;
+      document.getElementById('chatSub').textContent = `${u.city || ''} · Coins: ${u.coins ?? 0} · Betreut: ${u.is_managed ? 'ja' : 'nein'}`;
+      document.querySelectorAll('.user').forEach(x => x.classList.remove('active'));
+      // Editbox hydraten
+      document.getElementById('eName').value = u.name || '';
+      document.getElementById('eAge').value = u.age ?? '';
+      document.getElementById('eCity').value = u.city || '';
+      document.getElementById('eCoins').value = u.coins ?? 0;
+      document.getElementById('ePhoto').value = u.photo || '';
+      document.getElementById('ePremium').value = u.is_premium ? '1' : '0';
+      document.getElementById('eTier').value = u.premium_tier || '';
+      document.getElementById('eBio').value = u.bio || '';
+      document.getElementById('eInterests').value = Array.isArray(u.interests) ? u.interests.join(', ') : '';
+      await loadConversation();
+      await loadUsers();
+    }
+
+    async function applyEdits() {
+      if (!activeUser) return;
+      const interests = document.getElementById('eInterests').value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+      const payload = {
+        name: document.getElementById('eName').value,
+        age: Number(document.getElementById('eAge').value),
+        city: document.getElementById('eCity').value,
+        coins: Number(document.getElementById('eCoins').value),
+        photo: document.getElementById('ePhoto').value,
+        is_premium: document.getElementById('ePremium').value === '1',
+        premium_tier: document.getElementById('eTier').value || null,
+        interests,
+        bio: document.getElementById('eBio').value,
+      };
+      const res = await fetch(`${API}/admin/users/${activeUser.id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
+      // Cache aktualisieren
+      Object.assign(activeUser, data.user || {});
+      await loadUsers();
+      setStatus('Gespeichert ✓');
+    }
+
+    async function toggleManaged() {
+      if (!activeUser) return;
+      const managed = !activeUser.is_managed;
+      const res = await fetch(`${API}/admin/users/${activeUser.id}/managed`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ managed })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
+      activeUser.is_managed = managed ? 1 : 0;
+      await loadUsers();
+      await selectUser(activeUser);
+    }
+
+    async function loadConversation() {
+      if (!activeUser) return;
+      setStatus('Lade Chat…');
+      const res = await fetch(`${API}/admin/matches/${activeUser.id}`, { headers: authHeaders() });
+      const matches = await res.json().catch(() => ([]));
+      if (!res.ok) { setStatus(matches?.message || 'Fehler'); return; }
+
+      const my = matches.find(m => Number(m.user_id) === Number(activeUser.id));
+      activeMatchId = my?.match_id || null;
+
+      const msgsEl = document.getElementById('msgs');
+      msgsEl.innerHTML = '';
+      if (!activeMatchId) {
+        msgsEl.innerHTML = `<div style="opacity:.7;font-size:13px">Noch kein Chat. Schreib einfach eine Nachricht – Match wird erstellt.</div>`;
+        setStatus('Bereit');
+        return;
+      }
+
+      const r2 = await fetch(`${API}/admin/messages/${activeMatchId}`, { headers: authHeaders() });
+      const msgs = await r2.json().catch(() => ([]));
+      if (!r2.ok) { setStatus(msgs?.message || 'Fehler'); return; }
+
+      msgs.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (Number(m.sender_id) === Number(activeUser.id) ? '' : 'me');
+        div.innerHTML = `<div class="bubble">${esc(m.text)}</div><div class="time">${esc(fmt(m.created_at))}</div>`;
+        msgsEl.appendChild(div);
+      });
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+      setStatus('Bereit');
+    }
+
+    async function sendAdminMessage() {
+      if (!activeUser) return;
+      const text = document.getElementById('text').value.trim();
+      if (!text) return;
+      document.getElementById('text').value = '';
+
+      const res = await fetch(`${API}/admin/message`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ userId: activeUser.id, text })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
+      activeMatchId = data.matchId || activeMatchId;
+      await loadConversation();
+    }
+
+    document.getElementById('btnLoad').onclick = loadUsers;
+    document.getElementById('btnRefresh').onclick = loadConversation;
+    document.getElementById('btnManaged').onclick = toggleManaged;
+    document.getElementById('btnApply').onclick = applyEdits;
+    document.getElementById('send').onclick = sendAdminMessage;
+    document.getElementById('filterManaged').onchange = loadUsers;
+    document.getElementById('q').addEventListener('input', () => {
+      clearTimeout(window.__qT);
+      window.__qT = setTimeout(loadUsers, 200);
+    });
+    document.getElementById('text').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMessage(); }
+    });
+
+    // Auto-Token aus der normalen App übernehmen (wenn admin.html gleiche Domain hat)
+    try {
+      const saved = localStorage.getItem('hf_token');
+      const inp = document.getElementById('token');
+      if (saved && inp && !inp.value) inp.value = saved;
+    } catch {}
+  </script>
+</body>
+</html>
+

@@ -278,6 +278,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .card-info .card-bio { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 8px; line-height: 1.5; }
 .card-info .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .card-tag { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 3px 12px; font-size: 12px; }
+.card-tag.managed { background: rgba(209,163,87,0.18); border: 1px solid rgba(209,163,87,0.35); color: #f3d6a1; }
 
 .card-stamp {
   position: absolute;
@@ -337,11 +338,13 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .match-new { display: inline-block; background: var(--rose); color: #fff; font-size: 10px; border-radius: 6px; padding: 1px 6px; margin-top: 4px; }
 
 /* ===== CHAT ===== */
-#page-chat { padding: 0; overflow: hidden; height: 100vh; }
+#page-chat { padding: 0; overflow: hidden; height: 100%; min-height: 0; }
+#page-chat.active { position: absolute; inset: 0; }
 .chat-layout {
   display: grid;
   grid-template-columns: 300px 1fr;
   height: 100%;
+  min-height: 0; /* wichtig, damit Children scrollen dürfen */
 }
 
 .chat-list {
@@ -385,6 +388,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  min-height: 0; /* wichtig für .chat-messages overflow */
 }
 
 .chat-empty {
@@ -409,6 +413,11 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   flex: 1; overflow-y: auto;
   padding: 24px;
   display: flex; flex-direction: column; gap: 12px;
+  /* Platz für sticky Input-Leiste, damit letzte Nachricht sichtbar bleibt */
+  padding-bottom: 120px;
+  min-height: 0; /* key: erlaubt echtes Scrollen in Flex */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .message {
@@ -444,6 +453,9 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   border-top: 1px solid var(--border);
   display: flex; gap: 12px; align-items: flex-end;
   background: var(--bg2);
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 .chat-input-area input {
   flex: 1;
@@ -579,6 +591,8 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   .chat-layout { grid-template-columns: 1fr; }
   .chat-list { display: none; }
   #page-chat { height: calc(100vh - 70px); }
+  #page-chat .chat-input-area { bottom: 70px; }
+  #page-chat .chat-messages { padding-bottom: 180px; }
 }
 @media (max-width: 500px) {
   .auth-card { padding: 36px 24px; }
@@ -686,12 +700,19 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
           Rechtliches
         </button>
       </nav>
+      <div style="padding:10px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,0.02);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">🔥</span>
+          <div style="font-size:12px;color:var(--text2)">Herzfunken</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--gold)" id="walletBadge">—</div>
+      </div>
       <button onclick="openPremium()" style="width:100%;margin-bottom:8px;padding:12px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--gold),#d4a060);color:#1a1200;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">💎 Premium werden</button>
       <button class="btn-logout" onclick="handleLogout()">Abmelden</button>
       <div style="padding:10px 16px;border-top:1px solid var(--border);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;">
-        <a href="/legal.html" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">Impressum</a>
-        <a href="/legal.html" onclick="sessionStorage.setItem('legalTab','datenschutz')" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">Datenschutz</a>
-        <a href="/legal.html" onclick="sessionStorage.setItem('legalTab','agb')" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">AGB</a>
+        <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('impressum', document.querySelector('.legal-tabs .legal-tab:nth-child(1)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">Impressum</a>
+        <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('datenschutz', document.querySelector('.legal-tabs .legal-tab:nth-child(2)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">Datenschutz</a>
+        <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('agb', document.querySelector('.legal-tabs .legal-tab:nth-child(3)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--text3)'">AGB</a>
       </div>
     </aside>
 
@@ -935,10 +956,10 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   </div>
 
   <!-- LEGAL FOOTER (mobile) -->
-  <div style="position:fixed;bottom:70px;left:0;right:0;text-align:center;padding:6px;background:var(--bg);border-top:1px solid var(--border);display:flex;justify-content:center;gap:16px;z-index:99;" id="legalFooter">
-    <a href="/legal.html" style="font-size:11px;color:var(--text3);text-decoration:none;">Impressum</a>
-    <a href="/legal.html" style="font-size:11px;color:var(--text3);text-decoration:none;">Datenschutz</a>
-    <a href="/legal.html" style="font-size:11px;color:var(--text3);text-decoration:none;">AGB</a>
+  <div style="position:fixed;bottom:70px;left:0;right:0;text-align:center;padding:6px;background:var(--bg);border-top:1px solid var(--border);display:none;justify-content:center;gap:16px;z-index:99;" id="legalFooter">
+    <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('impressum', document.querySelector('.legal-tabs .legal-tab:nth-child(1)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;">Impressum</a>
+    <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('datenschutz', document.querySelector('.legal-tabs .legal-tab:nth-child(2)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;">Datenschutz</a>
+    <a href="#" onclick="showPage('legal', document.querySelector('[data-page=\\'legal\\']')); showLegalTab('agb', document.querySelector('.legal-tabs .legal-tab:nth-child(3)')); return false;" style="font-size:11px;color:var(--text3);text-decoration:none;">AGB</a>
   </div>
 
 
@@ -951,30 +972,30 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 
       <!-- PLANS -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:4px">
-        <!-- Monthly -->
+        <!-- Small -->
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">MONATLICH</div>
-          <div style="font-family:var(--font-display);font-size:32px;font-weight:300">9,99€</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">KLEINES PAKET</div>
+        <div id="price-premium_small" style="font-family:var(--font-display);font-size:32px;font-weight:300">—</div>
           <div style="font-size:11px;color:var(--text3);margin-bottom:16px">pro Monat</div>
           <ul style="list-style:none;text-align:left;font-size:12px;color:var(--text2);margin-bottom:16px;padding:0">
-            <li style="margin-bottom:6px">✓ Unbegrenzte Likes</li>
-            <li style="margin-bottom:6px">✓ Sehen wer dich mag</li>
-            <li style="margin-bottom:6px">✓ Premium Badge</li>
+            <li style="margin-bottom:6px">✓ Unbegrenzt swipen</li>
+            <li style="margin-bottom:6px">✓ Unbegrenzt liken</li>
+            <li style="margin-bottom:6px">✓ 10 Herzfunken inklusive</li>
           </ul>
-          <button onclick="buyProduct('premium_monthly', this)" style="width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--rose),var(--rose2));color:#fff;font-family:var(--font-body);font-size:13px;cursor:pointer">Auswählen</button>
+          <button onclick="buyProduct('premium_small', this)" style="width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--rose),var(--rose2));color:#fff;font-family:var(--font-body);font-size:13px;cursor:pointer">Auswählen</button>
         </div>
-        <!-- Yearly -->
+        <!-- Big -->
         <div style="background:var(--bg3);border:2px solid var(--gold);border-radius:16px;padding:20px;text-align:center;position:relative">
           <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:#1a1200;font-size:10px;font-weight:700;padding:2px 12px;border-radius:20px;white-space:nowrap">BESTES ANGEBOT</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">JÄHRLICH</div>
-          <div style="font-family:var(--font-display);font-size:32px;font-weight:300;color:var(--gold)">79,99€</div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:16px">≈ 6,67€ / Monat</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">GROSSES PAKET</div>
+          <div id="price-premium_big" style="font-family:var(--font-display);font-size:32px;font-weight:300;color:var(--gold)">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:16px">pro Jahr</div>
           <ul style="list-style:none;text-align:left;font-size:12px;color:var(--text2);margin-bottom:16px;padding:0">
-            <li style="margin-bottom:6px">✓ Alles aus Premium</li>
-            <li style="margin-bottom:6px">✓ 2 Monate gratis</li>
-            <li style="margin-bottom:6px">✓ Prioritäts-Support</li>
+            <li style="margin-bottom:6px">✓ Unbegrenzt swipen</li>
+            <li style="margin-bottom:6px">✓ Unbegrenzt liken</li>
+            <li style="margin-bottom:6px">✓ 50 Herzfunken inklusive</li>
           </ul>
-          <button onclick="buyProduct('premium_yearly', this)" style="width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#d4a060);color:#1a1200;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer">Auswählen</button>
+          <button onclick="buyProduct('premium_big', this)" style="width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#d4a060);color:#1a1200;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer">Auswählen</button>
         </div>
       </div>
 
@@ -985,24 +1006,24 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
           <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer" onclick="buyProduct('coins_100', this)">
             <div style="font-size:20px;color:var(--gold);font-family:var(--font-display)">100</div>
             <div style="font-size:10px;color:var(--text3)">Funken</div>
-            <div style="font-size:13px;font-weight:500;margin-top:4px">2,99€</div>
+            <div id="price-coins_100" style="font-size:13px;font-weight:500;margin-top:4px">—</div>
           </div>
           <div style="background:var(--bg3);border:1px solid var(--rose);border-radius:12px;padding:12px;text-align:center;cursor:pointer;position:relative" onclick="buyProduct('coins_500', this)">
             <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--rose);color:#fff;font-size:9px;padding:1px 8px;border-radius:10px;white-space:nowrap">Beliebt</div>
             <div style="font-size:20px;color:var(--gold);font-family:var(--font-display)">500</div>
             <div style="font-size:10px;color:var(--text3)">Funken</div>
-            <div style="font-size:13px;font-weight:500;margin-top:4px">9,99€</div>
+            <div id="price-coins_500" style="font-size:13px;font-weight:500;margin-top:4px">—</div>
           </div>
           <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer" onclick="buyProduct('coins_1200', this)">
             <div style="font-size:20px;color:var(--gold);font-family:var(--font-display)">1200</div>
             <div style="font-size:10px;color:var(--text3)">Funken</div>
-            <div style="font-size:13px;font-weight:500;margin-top:4px">19,99€</div>
+            <div id="price-coins_1200" style="font-size:13px;font-weight:500;margin-top:4px">—</div>
           </div>
         </div>
       </div>
 
       <div style="display:flex;gap:8px;align-items:center;justify-content:center;font-size:11px;color:var(--text3);margin-top:4px">
-        <span>🔒 SSL</span><span>•</span><span>↩️ 14 Tage Rückgabe</span><span>•</span><span>Powered by Stripe</span>
+        <span>🔒 SSL</span><span>•</span><span>Powered by Stripe</span>
       </div>
 
       <button class="btn-secondary" onclick="closePremium()" style="margin-top:4px">Schließen</button>
@@ -1024,9 +1045,9 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
 // ===== CONFIG =====
-const API = 'http://localhost:3000/api'; // Change to your backend URL
+const API = (localStorage.getItem('hf_api') || `${window.location.origin}/api`).replace(/\/+$/, '');
 
 // ===== STATE =====
 let currentUser = JSON.parse(localStorage.getItem('hf_user') || 'null');
@@ -1037,6 +1058,25 @@ let matches = [];
 let activeChat = null;
 let socket = null;
 let interests = [];
+let chatPollTimer = null;
+
+function normalizeInterests(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  if (typeof value === 'string') {
+    const s = value.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+    } catch {}
+    return s.split(',').map(t => t.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+if (currentUser) {
+  currentUser.interests = normalizeInterests(currentUser.interests);
+}
 
 // ===== DEMO DATA =====
 const allDemoProfiles = [
@@ -1052,8 +1092,20 @@ const allDemoProfiles = [
   { id: 10, name: 'Lisa', age: 30, city: 'Bremen', bio: 'Lehrerin mit Leidenschaft. Kreativ, neugierig und immer mit einem Lächeln.', tags: ['Kreativität', 'Bildung', 'Wandern'], photo: 'https://i.pravatar.cc/600?img=40' },
 ];
 
-function getFilteredProfiles() {
-  return allDemoProfiles;
+async function getFilteredProfiles() {
+  try {
+    const res = await fetch(`${API}/discover`, { headers: authHeaders() });
+    if (res.status === 401) { handleLogout(); return []; }
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data)) return [];
+    return data.map(p => ({
+      ...p,
+      tags: normalizeInterests(p.interests),
+      is_managed: Number(p.is_managed || 0)
+    }));
+  } catch {
+    return allDemoProfiles;
+  }
 }
 
 const demoMatches = [
@@ -1064,15 +1116,37 @@ const demoMatches = [
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+  // Demo/alte Tokens blocken (sonst gehen Payments mit 401 kaputt)
+  if (token === 'demo') {
+    localStorage.removeItem('hf_user');
+    localStorage.removeItem('hf_token');
+    currentUser = null;
+    token = null;
+  }
+
+  const requireAuth = () => {
+    document.getElementById('app')?.classList?.add('hidden');
+    document.getElementById('authOverlay')?.classList?.add('active');
+    showLogin();
+  };
+
   if (currentUser && token) {
-    showApp();
+    // Token kurz validieren (sonst "Token ungültig" später bei Payments)
+    fetch(`${API}/profile`, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => {
+        if (r.status === 401) throw new Error('unauthorized');
+        return r;
+      })
+      .then(() => showApp())
+      .catch(() => {
+        localStorage.removeItem('hf_user');
+        localStorage.removeItem('hf_token');
+        currentUser = null;
+        token = null;
+        requireAuth();
+      });
   } else {
-    // Demo mode: auto-login with demo user
-    currentUser = { id: 99, name: 'Max', age: 28, city: 'Berlin', email: 'max@demo.de' };
-    token = 'demo';
-    localStorage.setItem('hf_user', JSON.stringify(currentUser));
-    localStorage.setItem('hf_token', token);
-    showApp();
+    requireAuth();
   }
 });
 
@@ -1101,12 +1175,8 @@ async function handleLogin() {
     if (!res.ok) return setAuthError(data.message || 'Fehler beim Anmelden');
     saveSession(data.user, data.token);
     showApp();
-  } catch {
-    // Demo mode fallback
-    currentUser = { id: 99, name: 'Max', age: 28, city: 'Berlin', email };
-    token = 'demo';
-    saveSession(currentUser, token);
-    showApp();
+  } catch (e) {
+    setAuthError('Server nicht erreichbar. Bitte später erneut versuchen.');
   }
 }
 
@@ -1129,11 +1199,8 @@ async function handleRegister() {
     if (!res.ok) return setAuthError(data.message || 'Fehler bei der Registrierung');
     saveSession(data.user, data.token);
     showApp();
-  } catch {
-    currentUser = { id: 99, name, age: parseInt(age), city: '', email };
-    token = 'demo';
-    saveSession(currentUser, token);
-    showApp();
+  } catch (e) {
+    setAuthError('Server nicht erreichbar. Bitte später erneut versuchen.');
   }
 }
 
@@ -1148,6 +1215,7 @@ function saveSession(user, tok) {
   token = tok;
   localStorage.setItem('hf_user', JSON.stringify(user));
   localStorage.setItem('hf_token', tok);
+  refreshWalletDisplay();
 }
 
 function handleLogout() {
@@ -1157,6 +1225,7 @@ function handleLogout() {
   document.getElementById('app').classList.add('hidden');
   document.getElementById('authOverlay').classList.add('active');
   showLogin();
+  refreshWalletDisplay();
 }
 
 // ===== APP =====
@@ -1169,6 +1238,14 @@ function showApp() {
   loadProfile();
   document.getElementById('discoverGreeting').textContent =
     `Hallo ${currentUser?.name || 'dort'} 👋 Wen möchtest du heute kennenlernen?`;
+  refreshWalletDisplay();
+}
+
+function refreshWalletDisplay() {
+  try { currentUser = JSON.parse(localStorage.getItem('hf_user') || 'null'); } catch {}
+  const coins = currentUser?.coins ?? '—';
+  const badge = document.getElementById('walletBadge');
+  if (badge) badge.textContent = coins;
 }
 
 // ===== NAVIGATION =====
@@ -1177,11 +1254,21 @@ function showPage(page, btn) {
   document.getElementById('page-' + page).classList.add('active');
   document.querySelectorAll('.nav-btn, .mobile-nav button').forEach(b => b.classList.remove('active'));
   document.querySelectorAll(`[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+  const lf = document.getElementById('legalFooter');
+  if (lf) lf.style.display = page === 'legal' ? 'flex' : 'none';
+
+  const main = document.querySelector('.main-content');
+  if (main) main.style.overflowY = page === 'chat' ? 'hidden' : 'auto';
+
+  if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+  if (page === 'chat') {
+    chatPollTimer = setInterval(() => reloadActiveChatMessages(), 2500);
+  }
 }
 
 // ===== DISCOVER / SWIPE =====
-function loadDiscover() {
-  profiles = getFilteredProfiles();
+async function loadDiscover() {
+  profiles = await getFilteredProfiles();
   currentCardIndex = 0;
   renderCards();
 }
@@ -1201,6 +1288,8 @@ function renderCards() {
 function createCard(profile) {
   const card = document.createElement('div');
   card.className = 'profile-card';
+  const tags = Array.isArray(profile.tags) ? profile.tags : [];
+  const managedTag = profile.is_managed ? '<span class="card-tag managed">Team-betreut</span>' : '';
   card.innerHTML = `
     <img class="card-photo" src="${profile.photo}" alt="${profile.name}" draggable="false">
     <div class="card-gradient"></div>
@@ -1209,7 +1298,8 @@ function createCard(profile) {
       <p class="card-meta">📍 ${profile.city}</p>
       <p class="card-bio">${profile.bio}</p>
       <div class="card-tags">
-        ${profile.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
+        ${managedTag}
+        ${tags.map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join('')}
       </div>
     </div>
     <div class="card-stamp like">JA</div>
@@ -1259,12 +1349,41 @@ function setupDrag(card, profile) {
   document.addEventListener('touchend', onEnd);
 }
 
-function swipe(direction) {
+async function swipe(direction) {
   const stack = document.getElementById('cardStack');
   const topCard = stack.lastElementChild;
   if (!topCard) return;
   const profile = profiles[currentCardIndex];
-  swipeCard(topCard, direction, profile);
+  if (!profile?.id) return;
+
+  const action = direction === 'right' ? 'like' : direction === 'super' ? 'super' : 'nope';
+
+  try {
+    const res = await fetch(`${API}/swipe`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ targetId: profile.id, action })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return handleLogout();
+    if (!res.ok) {
+      // 402 = Tageslimit (Free) erreicht
+      if (res.status === 402) {
+        showToast(data?.message || 'Limit erreicht. Premium freischalten?');
+        openPremium();
+        return;
+      }
+      showToast(data?.message || 'Swipe fehlgeschlagen');
+      return;
+    }
+
+    swipeCard(topCard, direction, profile);
+    if ((action === 'like' || action === 'super') && data?.isMatch) {
+      setTimeout(() => showMatchPopup(profile), 650);
+    }
+  } catch {
+    showToast('Server nicht erreichbar.');
+  }
 }
 
 function swipeCard(card, direction, profile) {
@@ -1273,10 +1392,6 @@ function swipeCard(card, direction, profile) {
   card.style.transition = 'transform .4s ease, opacity .4s ease';
   card.style.transform = `translate(${x}px, ${direction === 'super' ? -300 : 0}px) rotate(${rotate}deg)`;
   card.style.opacity = '0';
-
-  if (direction === 'right' || direction === 'super') {
-    handleLike(profile);
-  }
 
   currentCardIndex++;
   setTimeout(() => {
@@ -1297,29 +1412,50 @@ function showNoMoreCards() {
     </div>`;
 }
 
-async function handleLike(profile) {
-  // Random match (30% chance in demo)
-  if (Math.random() < 0.3) {
-    setTimeout(() => showMatchPopup(profile), 600);
-  }
-  // Real API call:
-  // await fetch(`${API}/swipe`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ targetId: profile.id, action: 'like' }) });
-}
+// handleLike (Demo) entfernt – Swipe läuft über die API
 
 // ===== MATCHES =====
-function loadMatches() {
-  matches = [...demoMatches];
-  renderMatches();
+async function loadMatches() {
+  try {
+    const res = await fetch(`${API}/matches`, { headers: authHeaders() });
+    if (res.status === 401) return handleLogout();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Matches konnten nicht geladen werden');
+
+    // Normalisiere für UI (wir brauchen match_id + name + photo + city + age)
+    const list = Array.isArray(data) ? data : [];
+    matches = list.map(m => ({
+      match_id: Number(m.match_id),
+      id: Number(m.user_id), // Gegenüber-ID (für evtl. später)
+      name: m.name || 'Unbekannt',
+      age: m.age ?? '',
+      city: m.city ?? '',
+      photo: m.photo || 'https://i.pravatar.cc/300?img=10',
+      is_managed: Number(m.is_managed || 0),
+      isNew: false
+    }));
+    renderMatches();
+  } catch {
+    matches = [];
+    renderMatches();
+  }
 }
 
 function renderMatches() {
   const grid = document.getElementById('matchesGrid');
+  if (!grid) return;
+  if (!matches.length) {
+    grid.innerHTML = `<div class="empty-state">Noch keine Matches.</div>`;
+    const badge = document.getElementById('matchBadge');
+    if (badge) badge.style.display = 'none';
+    return;
+  }
   grid.innerHTML = matches.map(m => `
-    <div class="match-card" onclick="openMatchChat(${m.id}, '${m.name}', '${m.photo}')">
-      <img src="${m.photo}" alt="${m.name}">
+    <div class="match-card" onclick="openMatchChat(${Number(m.match_id)}, '${escapeAttr(m.name)}', '${escapeAttr(m.photo)}')">
+      <img src="${escapeAttr(m.photo)}" alt="${escapeAttr(m.name)}">
       <div class="match-card-info">
-        <h4>${m.name}, ${m.age}</h4>
-        <p>📍 ${m.city}</p>
+        <h4>${escapeHtml(m.name)}${m.age ? `, ${escapeHtml(m.age)}` : ''}${m.is_managed ? ' <span style="font-size:11px;color:var(--gold);font-weight:700">· Team</span>' : ''}</h4>
+        <p>📍 ${escapeHtml(m.city || '')}</p>
         ${m.isNew ? '<span class="match-new">Neu ✓</span>' : ''}
       </div>
     </div>
@@ -1331,22 +1467,39 @@ function renderMatches() {
 }
 
 // ===== CHAT =====
-function loadChats() {
+async function loadChats() {
   const items = document.getElementById('chatListItems');
-  items.innerHTML = demoMatches.map(m => `
-    <div class="chat-list-item" onclick="openMatchChat(${m.id}, '${m.name}', '${m.photo}')">
-      <img class="chat-avatar" src="${m.photo}" alt="${m.name}">
-      <div class="chat-item-info">
-        <h4>${m.name}</h4>
-        <p>Schreib als Erster...</p>
+  if (!items) return;
+
+  try {
+    const res = await fetch(`${API}/matches`, { headers: authHeaders() });
+    if (res.status === 401) return handleLogout();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Chats konnten nicht geladen werden');
+
+    const list = Array.isArray(data) ? data : [];
+    if (!list.length) {
+      items.innerHTML = `<div class="empty-state">Noch keine Matches. Swipe dich erstmal durch 💕</div>`;
+      return;
+    }
+
+    items.innerHTML = list.map(m => `
+      <div class="chat-list-item" onclick="openMatchChat(${Number(m.match_id)}, '${escapeAttr(m.name||'')}', '${escapeAttr(m.photo||'')}')">
+        <img class="chat-avatar" src="${m.photo || 'https://i.pravatar.cc/200?img=10'}" alt="${escapeAttr(m.name||'Chat')}">
+        <div class="chat-item-info">
+          <h4>${escapeHtml(m.name || 'Unbekannt')}</h4>
+          <p>Tippe, um zu chatten…</p>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  } catch (e) {
+    items.innerHTML = `<div class="empty-state">Fehler beim Laden der Chats.</div>`;
+  }
 }
 
-function openMatchChat(id, name, photo) {
+async function openMatchChat(matchId, name, photo) {
   showPage('chat', document.querySelector('[data-page="chat"]'));
-  activeChat = { id, name, photo };
+  activeChat = { matchId: Number(matchId), name, photo, renderedIds: new Set(), lastMsgId: 0 };
   const win = document.getElementById('chatWindow');
   win.innerHTML = `
     <div class="chat-header">
@@ -1358,8 +1511,8 @@ function openMatchChat(id, name, photo) {
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="message theirs">
-        <div class="message-bubble">Hallo! Schön, dass wir gematched haben 😊</div>
-        <div class="message-time">Gerade eben</div>
+        <div class="message-bubble">Lade Nachrichten…</div>
+        <div class="message-time"> </div>
       </div>
     </div>
     <div class="chat-input-area">
@@ -1371,43 +1524,124 @@ function openMatchChat(id, name, photo) {
   `;
   // Mark active in list
   document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+
+  const box = document.getElementById('chatMessages');
+  if (box) box.innerHTML = '';
+  await reloadActiveChatMessages(true);
+}
+
+async function reloadActiveChatMessages(force = false) {
+  if (!activeChat?.matchId) return;
+  const box = document.getElementById('chatMessages');
+  if (!box) return;
+
+  try {
+    const res = await fetch(`${API}/messages/${activeChat.matchId}`, { headers: authHeaders() });
+    if (res.status === 401) return handleLogout();
+    const msgs = await res.json();
+    const list = Array.isArray(msgs) ? msgs : [];
+
+    const lastId = list.length ? Number(list[list.length - 1].id) : 0;
+    if (!force && activeChat.lastMsgId && lastId && lastId === activeChat.lastMsgId) return;
+    activeChat.lastMsgId = lastId;
+
+    const shouldScroll =
+      Math.abs((box.scrollHeight - box.scrollTop) - box.clientHeight) < 40;
+
+    if (force) {
+      box.innerHTML = '';
+      activeChat.renderedIds = new Set();
+    }
+
+    if (!list.length && force) {
+      appendMessage('Schreib die erste Nachricht 😊', 'theirs');
+    } else {
+      for (const m of list) {
+        const id = Number(m.id);
+        if (activeChat.renderedIds?.has(id)) continue;
+        activeChat.renderedIds?.add(id);
+        appendMessage(m.text, Number(m.sender_id) === Number(currentUser?.id) ? 'mine' : 'theirs', m.created_at);
+      }
+    }
+
+    if (shouldScroll) box.scrollTop = box.scrollHeight;
+  } catch {
+    // still keep current UI
+  }
 }
 
 function handleChatKey(e) {
-  if (e.key === 'Enter') sendMessage();
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    sendMessage();
+  }
 }
 
-function sendMessage() {
+async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
+  if (!activeChat?.matchId) return;
+
+  // optimistic UI
   appendMessage(text, 'mine');
   input.value = '';
+  input.focus();
 
-  // Simulate reply after 1-2s
-  setTimeout(() => {
-    const replies = [
-      'Das klingt toll! 😄',
-      'Erzähl mir mehr davon!',
-      'Interessant! Und was machst du sonst so?',
-      'Haha, das ist lustig 😊',
-      'Ich freue mich, dich kennenzulernen!',
-    ];
-    appendMessage(replies[Math.floor(Math.random() * replies.length)], 'theirs');
-  }, 1000 + Math.random() * 1000);
-
-  // Real: socket.emit('message', { to: activeChat.id, text });
+  try {
+    const res = await fetch(`${API}/messages`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ matchId: activeChat.matchId, text })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return handleLogout();
+    if (!res.ok) {
+      // Wenn Coins nicht reichen: Hinweis + Wallet refreshen
+      if (res.status === 402) showToast(data?.message || 'Nicht genug Herzfunken.');
+      else showToast(data?.message || 'Senden fehlgeschlagen.');
+      await refreshSessionFromServer();
+      return;
+    }
+    // Wallet sofort aktualisieren (Coins / Free-Quota)
+    if (data?.wallet) {
+      const merged = { ...(currentUser || {}), coins: data.wallet.coins, is_premium: data.wallet.isPremium ? 1 : 0 };
+      localStorage.setItem('hf_user', JSON.stringify(merged));
+      currentUser = merged;
+      refreshWalletDisplay();
+      // free-messages System entfernt → Premium gibt Coins (Server updated Wallet)
+    } else {
+      await refreshSessionFromServer();
+    }
+    await reloadActiveChatMessages(true);
+  } catch {
+    showToast('Server nicht erreichbar.');
+  }
 }
 
-function appendMessage(text, type) {
+function appendMessage(text, type, createdAt) {
   const msgs = document.getElementById('chatMessages');
   if (!msgs) return;
-  const now = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const d = createdAt ? new Date(createdAt) : new Date();
+  const now = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement('div');
   div.className = `message ${type}`;
-  div.innerHTML = `<div class="message-bubble">${text}</div><div class="message-time">${now}</div>`;
+  div.innerHTML = `<div class="message-bubble">${escapeHtml(String(text ?? ''))}</div><div class="message-time">${now}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function refreshSessionFromServer() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API}/profile`, { headers: authHeaders() });
+    if (res.status === 401) return handleLogout();
+    const u = await res.json();
+    if (!res.ok) return;
+    currentUser = u;
+    localStorage.setItem('hf_user', JSON.stringify(u));
+    refreshWalletDisplay();
+  } catch {}
 }
 
 // ===== PROFILE =====
@@ -1422,7 +1656,7 @@ function loadProfile() {
   } else {
     document.getElementById('profilePhoto').src = `https://i.pravatar.cc/200?img=${currentUser.id || 10}`;
   }
-  interests = currentUser.interests || [];
+  interests = normalizeInterests(currentUser.interests);
   renderInterests();
 }
 
@@ -1469,9 +1703,23 @@ function removeInterest(tag) {
 }
 
 function renderInterests() {
-  document.getElementById('interestTags').innerHTML = interests.map(t =>
-    `<div class="interest-tag">${t}<span onclick="removeInterest('${t}')">✕</span></div>`
-  ).join('');
+  if (!Array.isArray(interests)) interests = normalizeInterests(interests);
+  const wrap = document.getElementById('interestTags');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  interests.forEach((t) => {
+    const tag = document.createElement('div');
+    tag.className = 'interest-tag';
+    tag.textContent = String(t);
+
+    const x = document.createElement('span');
+    x.textContent = '✕';
+    x.style.cursor = 'pointer';
+    x.onclick = () => removeInterest(String(t));
+
+    tag.appendChild(x);
+    wrap.appendChild(tag);
+  });
 }
 
 // ===== MATCH POPUP =====
@@ -1491,7 +1739,7 @@ function openChat() {
   closeMatchPopup();
   const name = document.getElementById('matchName').textContent;
   const match = matches.find(m => m.name === name);
-  if (match) openMatchChat(match.id, match.name, match.photo);
+  if (match) openMatchChat(match.match_id || match.id, match.name, match.photo);
 }
 
 // ===== HELPERS =====
@@ -1499,5 +1747,114 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 }
 
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function escapeAttr(s) {
+  // für Attribute/inline-Strings (onclick), minimal aber sicher genug
+  return escapeHtml(s).replace(/\r?\n/g, ' ');
+}
+
 function showLegalTab(tab, btn) {
-  document.querySelectorAll('.legal-section').forEach(s => s.classList.
+  document.querySelectorAll('.legal-section').forEach(s => s.style.display = 'none');
+  const section = document.getElementById('legal-' + tab);
+  if (section) section.style.display = 'block';
+  document.querySelectorAll('.legal-tabs .legal-tab').forEach(b => b.classList.remove('active'));
+  if (btn?.classList) btn.classList.add('active');
+}
+
+function showToast(text) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(30,28,50,0.92);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);color:#f0eef8;padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.35);z-index:9999;font-size:13px;max-width:calc(100vw - 40px);text-align:center;opacity:0;transition:opacity .15s';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.style.opacity = '1';
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(() => (el.style.opacity = '0'), 2200);
+}
+
+function openPremium() {
+  document.getElementById('premiumModal')?.classList.add('active');
+  hydratePrices();
+}
+function closePremium() {
+  document.getElementById('premiumModal')?.classList.remove('active');
+}
+
+function formatEurFromCents(cents) {
+  const eur = (Number(cents || 0) / 100).toFixed(2).replace('.', ',');
+  return `${eur}€`;
+}
+
+async function hydratePrices() {
+  try {
+    const res = await fetch(`${API}/payments/products`);
+    const list = await res.json();
+    if (!res.ok || !Array.isArray(list)) return;
+    const byId = Object.fromEntries(list.map(p => [p.id, p]));
+
+    const setPrice = (id, elId) => {
+      const p = byId[id];
+      const el = document.getElementById(elId);
+      if (p && el) el.textContent = formatEurFromCents(p.amount);
+    };
+
+    setPrice('premium_small', 'price-premium_small');
+    setPrice('premium_big', 'price-premium_big');
+    setPrice('coins_100', 'price-coins_100');
+    setPrice('coins_500', 'price-coins_500');
+    setPrice('coins_1200', 'price-coins_1200');
+  } catch {}
+}
+
+async function buyProduct(productId, btn) {
+  if (!token) return showToast('Bitte zuerst einloggen.');
+  const orig = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = 'Weiter…'; }
+  try {
+    const res = await fetch(`${API}/payments/checkout`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ productId })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem('hf_user');
+        localStorage.removeItem('hf_token');
+        currentUser = null;
+        token = null;
+        document.getElementById('app')?.classList?.add('hidden');
+        document.getElementById('authOverlay')?.classList?.add('active');
+        showLogin();
+        throw new Error('Session abgelaufen. Bitte neu einloggen.');
+      }
+      if (res.status === 404) {
+        throw new Error('Zahlungen sind auf diesem Server-Port nicht aktiv (STRIPE_SECRET_KEY/Server neu starten).');
+      }
+      throw new Error(data.message || `Fehler (${res.status})`);
+    }
+    if (data.sessionId) {
+      localStorage.setItem('hf_last_session_id', data.sessionId);
+    }
+    if (!data.url) throw new Error('Keine Checkout-URL erhalten');
+    window.location.href = data.url;
+  } catch (e) {
+    showToast(e.message || 'Checkout fehlgeschlagen');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig || 'Auswählen'; }
+  }
+}
+
+</script>
+</body>
+</html>

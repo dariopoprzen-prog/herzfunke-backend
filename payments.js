@@ -3,34 +3,41 @@
 
 const Stripe = require('stripe');
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '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');
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY nicht gesetzt');
+}
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ============================================================
 // 🔧 PRODUKTE & PREISE – hier anpassen
 // ============================================================
 const PRODUCTS = {
 
-  // === ABOS (monatlich) ===
-  premium_monthly: {
+  // === ABOS ===
+  premium_small: {
     type: 'subscription',
-    name: 'Premium Monatlich',
-    description: 'Unbegrenzte Likes, sehen wer dich geliked hat, Premium-Badge',
-    amount: 999,        // in Cents = 9,99 €
+    name: 'Premium (Klein)',
+    description: 'Unbegrenzt swipen & liken',
+    amount: 1999,        // 19,99 €
     currency: 'eur',
     interval: 'month',
-    features: ['Unbegrenzte Likes', 'Sehen wer dich mag', 'Premium Badge', 'Kein Werbung'],
-    stripePriceId: process.env.STRIPE_PRICE_PREMIUM_MONTHLY || null, // nach Stripe-Setup eintragen
+    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '10 Herzfunken inklusive'],
+    premiumTier: 'small',
+    coins: 10,
+    stripePriceId: process.env.STRIPE_PRICE_PREMIUM_SMALL || null, // optional
   },
 
-  premium_yearly: {
+  premium_big: {
     type: 'subscription',
-    name: 'Premium Jährlich',
-    description: 'Alle Premium-Vorteile – 2 Monate gratis!',
-    amount: 7999,       // 79,99 € / Jahr
+    name: 'Premium (Groß)',
+    description: 'Unbegrenzt swipen & liken',
+    amount: 9999,       // 99,99 € / Jahr
     currency: 'eur',
     interval: 'year',
-    features: ['Alles aus Premium', '2 Monate gratis', 'Prioritäts-Support'],
-    stripePriceId: process.env.STRIPE_PRICE_PREMIUM_YEARLY || null,
+    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '50 Herzfunken inklusive'],
+    premiumTier: 'big',
+    coins: 50,
+    stripePriceId: process.env.STRIPE_PRICE_PREMIUM_BIG || null,
   },
 
   // === EINMALIGE KÄUFE (Coins/Credits) ===
@@ -38,7 +45,7 @@ const PRODUCTS = {
     type: 'one_time',
     name: '100 Herzfunken',
     description: 'Für Superlike, Boosts und Geschenke',
-    amount: 299,        // 2,99 €
+    amount: 1700,       // 17,00 €  (10 Funken = 1 Nachricht = 1,70 €)
     currency: 'eur',
     coins: 100,
   },
@@ -47,7 +54,8 @@ const PRODUCTS = {
     type: 'one_time',
     name: '500 Herzfunken',
     description: 'Bestes Preis-Leistungs-Verhältnis',
-    amount: 999,        // 9,99 €
+    amount: 8500,       // 85,00 €
+    currency: 'eur',
     coins: 500,
     badge: 'Beliebt',
   },
@@ -56,7 +64,8 @@ const PRODUCTS = {
     type: 'one_time',
     name: '1200 Herzfunken',
     description: 'Großes Paket für echte Romantikerr',
-    amount: 1999,       // 19,99 €
+    amount: 20400,      // 204,00 €
+    currency: 'eur',
     coins: 1200,
     badge: 'Bestes Angebot',
   },

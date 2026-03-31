@@ -35,6 +35,7 @@ module.exports = function(db, authMiddleware) {
     )`);
 
     db.run(`ALTER TABLE users ADD COLUMN is_premium INTEGER DEFAULT 0`, [], () => {});
+    db.run(`ALTER TABLE users ADD COLUMN premium_tier TEXT`, [], () => {});
     db.run(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0`, [], () => {});
     db.run(`ALTER TABLE users ADD COLUMN stripe_customer_id TEXT`, [], () => {});
     db.run(`ALTER TABLE users ADD COLUMN subscription_id TEXT`, [], () => {});
@@ -117,10 +118,14 @@ module.exports = function(db, authMiddleware) {
         // Premium aktivieren (läuft 30/365 Tage)
         const days = product.interval === 'year' ? 365 : 30;
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+        const coinsGrant = Number(product.coins || 0);
         await dbRun(
-          `UPDATE users SET is_premium=1, stripe_customer_id=?, subscription_id=? WHERE id=?`,
-          [customerId, session.subscription?.id || null, userId]
+          `UPDATE users SET is_premium=1, premium_tier=?, stripe_customer_id=?, subscription_id=? WHERE id=?`,
+          [product.premiumTier || null, customerId, session.subscription?.id || null, userId]
         );
+        if (coinsGrant > 0) {
+          await dbRun('UPDATE users SET coins = coins + ? WHERE id=?', [coinsGrant, userId]);
+        }
         await dbRun(
           `UPDATE purchases SET expires_at=? WHERE stripe_session_id=?`,
           [expiresAt, session.id]
@@ -133,7 +138,7 @@ module.exports = function(db, authMiddleware) {
         );
       }
 
-      const user = await dbGet('SELECT id, name, is_premium, coins FROM users WHERE id=?', [userId]);
+      const user = await dbGet('SELECT id, name, is_premium, premium_tier, coins FROM users WHERE id=?', [userId]);
       res.json({ success: true, user, productId });
 
     } catch (err) {
@@ -194,6 +199,13 @@ module.exports = function(db, authMiddleware) {
             const invoice = event.data.object;
             const customerId = invoice.customer;
             await dbRun('UPDATE users SET is_premium=1 WHERE stripe_customer_id=?', [customerId]);
+            // Coins bei Verlängerung gutschreiben (nach Tier)
+            const u = await dbGet('SELECT id, premium_tier FROM users WHERE stripe_customer_id=?', [customerId]);
+            const tier = (u?.premium_tier || '').toLowerCase();
+            const grant = tier === 'big' ? 50 : tier === 'small' ? 10 : 0;
+            if (u?.id && grant > 0) {
+              await dbRun('UPDATE users SET coins = coins + ? WHERE id=?', [grant, u.id]);
+            }
             console.log(`🔄 Abo verlängert für Customer: ${customerId}`);
             break;
           }

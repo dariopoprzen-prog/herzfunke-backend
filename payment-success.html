@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zahlung erfolgreich – Herzfunke</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0d0d14; color:#f0eef8; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; padding:24px; }
+    .card { max-width:520px; width:100%; background:#13131e; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.45); }
+    h1 { margin:0 0 8px; font-size:20px; font-weight:700; }
+    p { margin:0 0 10px; color:#9890b8; font-size:13px; line-height:1.6; }
+    .ok { color:#7CFFB2; font-weight:700; }
+    .err { color:#e8607a; font-weight:700; }
+    .row { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    a,button { border:0; border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
+    .btn { background: linear-gradient(135deg,#e8607a,#c94060); color:white; }
+    .btn2 { background: transparent; border:1px solid rgba(255,255,255,0.10); color:#f0eef8; }
+    code { background:#1a1a28; padding:2px 6px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Checkout</h1>
+    <p id="status">Prüfe Zahlung…</p>
+    <p id="detail"></p>
+    <div class="row">
+      <a class="btn" href="/herzfunke_v6.html">Zurück zur App</a>
+      <button class="btn2" id="retry" type="button">Erneut prüfen</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id') || localStorage.getItem('hf_last_session_id');
+    const token = localStorage.getItem('hf_token');
+
+    const statusEl = document.getElementById('status');
+    const detailEl = document.getElementById('detail');
+    document.getElementById('retry').addEventListener('click', verify);
+
+    async function verify() {
+      detailEl.textContent = '';
+      if (!sessionId) {
+        statusEl.innerHTML = '<span class="err">Fehler:</span> keine session_id gefunden.';
+        return;
+      }
+      if (!token) {
+        statusEl.innerHTML = '<span class="err">Bitte einloggen:</span> Token fehlt.';
+        detailEl.innerHTML = `session_id: <code>${sessionId}</code>`;
+        return;
+      }
+
+      statusEl.textContent = 'Prüfe Zahlung…';
+      try {
+        const res = await fetch(`/api/payments/verify/${encodeURIComponent(sessionId)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || `Fehler (${res.status})`);
+
+        const user = JSON.parse(localStorage.getItem('hf_user') || 'null') || {};
+        const updated = { ...user, coins: data.user?.coins, is_premium: data.user?.is_premium };
+        localStorage.setItem('hf_user', JSON.stringify(updated));
+
+        statusEl.innerHTML = '<span class="ok">Zahlung bestätigt ✓</span>';
+        detailEl.textContent = `Produkt: ${data.productId} · Coins: ${data.user?.coins ?? ''}`;
+      } catch (e) {
+        statusEl.innerHTML = '<span class="err">Konnte nicht bestätigen.</span>';
+        detailEl.textContent = e.message || 'Unbekannter Fehler';
+      }
+    }
+
+    verify();
+  </script>
+</body>
+</html>
