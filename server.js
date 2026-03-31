@@ -36,6 +36,11 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 app.use(express.static('.'));
 
+// Startseite (robust)
+app.get(['/', '/index.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'herzfunke_v6.html'));
+});
+
 // Payment-Return Pages (robust, unabhängig von express.static)
 app.get(['/payment-success.html', '/payment-success.htm'], (req, res) => {
   res.sendFile(path.join(__dirname, 'payment-success.html'));
