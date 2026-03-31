@@ -294,11 +294,11 @@ app.post('/api/auth/register', async (req, res) => {
     const result = await dbRun('INSERT INTO users (name,age,email,password) VALUES (?,?,?,?)', [name,age,email,hash]);
     const user = await dbGet('SELECT * FROM users WHERE id = ?', [result.lastID]);
     const token = jwt.sign({ id: user.id, email }, JWT_SECRET, { expiresIn: '30d' });
-    // Auto-Match mit Bot
-    if (BOT_USER_ID) {
+    // Live: kein Auto-Match mit Bot (nur auf Wunsch aktivieren)
+    if (BOT_AUTOREPLY && BOT_USER_ID) {
       const u1 = Math.min(user.id, BOT_USER_ID), u2 = Math.max(user.id, BOT_USER_ID);
       await dbRun('INSERT OR IGNORE INTO matches (user1_id, user2_id) VALUES (?,?)', [u1, u2]);
-      console.log(`🤖 ${user.name} wurde automatisch mit Bot gematched`);
+      console.log(`🤖 ${user.name} wurde automatisch mit Bot gematched (BOT_AUTOREPLY=1)`);
     }
     res.status(201).json({ user: safeUser(user), token });
   } catch(err) { console.error(err); res.status(500).json({ message: 'Serverfehler' }); }
@@ -537,8 +537,9 @@ app.get('/api/matches', auth, async (req, res) => {
     FROM matches m
     JOIN users u1 ON m.user1_id=u1.id
     JOIN users u2 ON m.user2_id=u2.id
-    WHERE m.user1_id=? OR m.user2_id=?
-    ORDER BY m.created_at DESC`, Array(9).fill(id));
+    WHERE (m.user1_id=? OR m.user2_id=?)
+      AND (CASE WHEN m.user1_id=? THEN u2.is_bot ELSE u1.is_bot END) = 0
+    ORDER BY m.created_at DESC`, Array(10).fill(id));
   res.json(matches);
 });
 
