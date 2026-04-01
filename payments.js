@@ -96,7 +96,8 @@ async function createCheckoutSession({ productId, userId, userEmail, successUrl,
     metadata: { userId: String(userId), productId },
     success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: cancelUrl,
-    payment_method_types: ['card', 'paypal', 'sepa_debit'],
+    // Kein PayPal – Karte, SEPA-Lastschrift und andere in Stripe aktivierte Methoden über Dashboard
+    payment_method_types: ['card', 'sepa_debit'],
     locale: 'de',
   };
 
