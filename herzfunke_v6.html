@@ -233,12 +233,12 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .page-header h1 { font-family: var(--font-display); font-size: 40px; font-weight: 300; }
 .page-header p { color: var(--text2); margin-top: 4px; }
 
-/* ===== CARD STACK ===== */
+/* ===== CARD STACK ===== (kompakter = weniger Hochskalierung → schärfer auf dem Handy) */
 .card-stack {
   position: relative;
-  height: 500px;
+  height: min(52vh, 420px);
   width: 100%;
-  max-width: 380px;
+  max-width: min(300px, 88vw);
   margin: 0 auto;
 }
 
@@ -273,7 +273,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   bottom: 0; left: 0; right: 0;
   padding: 24px;
 }
-.card-info h3 { font-family: var(--font-display); font-size: 28px; font-weight: 400; }
+.card-info h3 { font-family: var(--font-display); font-size: 24px; font-weight: 400; }
 .card-info .card-meta { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 4px; }
 .card-info .card-bio { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 8px; line-height: 1.5; }
 .card-info .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
@@ -318,8 +318,8 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 /* ===== MATCHES ===== */
 .matches-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
 }
 .match-card {
   background: var(--card);
@@ -578,15 +578,18 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .interest-tag span { cursor: pointer; opacity: 0.7; }
 .interest-tag span:hover { opacity: 1; }
 
-/* ===== MATCH POPUP ===== */
+/* ===== MATCH POPUP ===== (z-index über Mobile-Nav & Auth, sonst keine Klicks) */
 .match-popup {
   position: fixed; inset: 0;
   background: rgba(5,5,15,0.85);
   backdrop-filter: blur(10px);
   display: none;
   align-items: center; justify-content: center;
-  z-index: 500;
+  z-index: 12000;
   padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .match-popup.active { display: flex; }
 
@@ -598,8 +601,14 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   text-align: center;
   max-width: 380px;
   width: 100%;
+  max-height: min(92vh, calc(100vh - 32px));
+  max-height: min(92dvh, calc(100dvh - 32px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex; flex-direction: column; gap: 16px;
   animation: popIn .4s cubic-bezier(.16,1,.3,1);
+  flex-shrink: 0;
 }
 @keyframes popIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
 
@@ -1041,9 +1050,9 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   </div>
 
 
-  <!-- PREMIUM MODAL -->
-  <div id="premiumModal" class="match-popup">
-    <div class="match-popup-inner" style="max-width:500px;gap:12px">
+  <!-- PREMIUM MODAL (Klick auf dunklen Hintergrund = schließen) -->
+  <div id="premiumModal" class="match-popup" onclick="if(event.target===this)closePremium()">
+    <div class="match-popup-inner" style="max-width:500px;gap:12px" onclick="event.stopPropagation()">
       <div style="font-size:28px">💎</div>
       <h2 style="font-family:var(--font-display);font-size:32px;font-weight:300;color:var(--gold)">Premium werden</h2>
       <p style="color:var(--text2);font-size:14px">Schalte alle Features frei und finde deine perfekte Verbindung</p>
@@ -1104,7 +1113,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
         <span>🔒 SSL</span><span>•</span><span>Powered by Stripe</span>
       </div>
 
-      <button class="btn-secondary" onclick="closePremium()" style="margin-top:4px">Schließen</button>
+      <button type="button" class="btn-secondary" onclick="closePremium()" style="margin-top:4px;position:relative;z-index:1">Schließen</button>
     </div>
   </div>
 
@@ -1634,8 +1643,9 @@ function createCard(profile) {
   card.className = 'profile-card';
   const tags = Array.isArray(profile.tags) ? profile.tags : [];
   const pUrl = String(profile.photo || '').trim();
-  const topPhoto = pUrl
-    ? `<img class="card-photo" src="${escapeAttr(pUrl)}" alt="${escapeAttr(profile.name)}" draggable="false">`
+  const pUrlAbs = pUrl ? absolutePhotoUrl(pUrl) : '';
+  const topPhoto = pUrlAbs
+    ? `<img class="card-photo" src="${escapeAttr(pUrlAbs)}" alt="${escapeAttr(profile.name)}" draggable="false" decoding="async" sizes="300px">`
     : `<div class="card-photo card-photo-empty" aria-hidden="true"></div>`;
   card.innerHTML = `
     ${topPhoto}
@@ -1677,13 +1687,47 @@ function setupDrag(card, profile) {
     else if (currentX < -30) { nopeStamp.style.opacity = Math.min(1, (-currentX - 30) / 80); likeStamp.style.opacity = 0; }
     else { likeStamp.style.opacity = 0; nopeStamp.style.opacity = 0; }
   };
-  const onEnd = () => {
+  const onEnd = async () => {
     if (!isDragging) return;
     isDragging = false;
     card.style.transition = 'transform .4s cubic-bezier(.25,.46,.45,.94)';
-    if (currentX > 90) { swipeCard(card, 'right', profile); }
-    else if (currentX < -90) { swipeCard(card, 'left', profile); }
-    else { card.style.transform = ''; card.querySelector('.card-stamp.like').style.opacity = 0; card.querySelector('.card-stamp.nope').style.opacity = 0; }
+    const threshold = 90;
+    let dir = null;
+    if (currentX > threshold) dir = 'right';
+    else if (currentX < -threshold) dir = 'left';
+    else {
+      card.style.transform = '';
+      card.querySelector('.card-stamp.like').style.opacity = 0;
+      card.querySelector('.card-stamp.nope').style.opacity = 0;
+      currentX = 0;
+      return;
+    }
+    const { res, data, action } = await postSwipe(profile, dir);
+    if (res.status === 401) {
+      handleLogout();
+      card.style.transform = '';
+      card.querySelector('.card-stamp.like').style.opacity = 0;
+      card.querySelector('.card-stamp.nope').style.opacity = 0;
+      currentX = 0;
+      return;
+    }
+    if (!res.ok) {
+      if (res.status === 402) {
+        showToast(data?.message || 'Gratis-Swipes aufgebraucht. Premium freischalten?', 5000);
+        openPremium();
+      } else {
+        showToast(data?.message || 'Swipe fehlgeschlagen');
+      }
+      card.style.transform = '';
+      card.querySelector('.card-stamp.like').style.opacity = 0;
+      card.querySelector('.card-stamp.nope').style.opacity = 0;
+      currentX = 0;
+      return;
+    }
+    if (action === 'like' || action === 'super') {
+      likedTeamProfileIds.add(Number(profile.id));
+    }
+    swipeCard(card, dir, profile);
     currentX = 0;
   };
 
@@ -1695,6 +1739,17 @@ function setupDrag(card, profile) {
   document.addEventListener('touchend', onEnd);
 }
 
+async function postSwipe(profile, direction) {
+  const action = direction === 'right' ? 'like' : direction === 'super' ? 'super' : 'nope';
+  const res = await fetch(`${API}/swipe`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ targetId: profile.id, action })
+  });
+  const data = await res.json().catch(() => ({}));
+  return { res, data, action };
+}
+
 async function swipe(direction) {
   const stack = document.getElementById('cardStack');
   const topCard = stack.lastElementChild;
@@ -1702,27 +1757,18 @@ async function swipe(direction) {
   const profile = profiles[currentCardIndex];
   if (!profile?.id) return;
 
-  const action = direction === 'right' ? 'like' : direction === 'super' ? 'super' : 'nope';
-
   try {
-    const res = await fetch(`${API}/swipe`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ targetId: profile.id, action })
-    });
-    const data = await res.json().catch(() => ({}));
+    const { res, data, action } = await postSwipe(profile, direction);
     if (res.status === 401) return handleLogout();
     if (!res.ok) {
-      // 402 = Tageslimit (Free) erreicht
       if (res.status === 402) {
-        showToast(data?.message || 'Limit erreicht. Premium freischalten?');
+        showToast(data?.message || 'Gratis-Swipes aufgebraucht. Premium freischalten?', 5000);
         openPremium();
         return;
       }
       showToast(data?.message || 'Swipe fehlgeschlagen');
       return;
     }
-
     if (action === 'like' || action === 'super') {
       likedTeamProfileIds.add(Number(profile.id));
     }
@@ -2054,7 +2100,7 @@ function appendMessage(msgOrText, type, createdAt) {
     const im = document.createElement('img');
     im.src = img;
     im.alt = 'Bild';
-    im.style.cssText = 'max-width:220px;max-height:220px;border-radius:12px;display:block';
+    im.style.cssText = 'max-width:min(220px,88vw);max-height:min(200px,40vh);width:auto;height:auto;object-fit:contain;border-radius:12px;display:block';
     im.onclick = () => window.open(img, '_blank');
     bubble.appendChild(im);
     if (text && text !== '📷 Bild') {
@@ -2238,18 +2284,19 @@ function showLegalTab(tab, btn) {
   if (btn?.classList) btn.classList.add('active');
 }
 
-function showToast(text) {
+function showToast(text, durationMs) {
   let el = document.getElementById('toast');
   if (!el) {
     el = document.createElement('div');
     el.id = 'toast';
-    el.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(30,28,50,0.92);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);color:#f0eef8;padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.35);z-index:9999;font-size:13px;max-width:calc(100vw - 40px);text-align:center;opacity:0;transition:opacity .15s';
+    el.style.cssText = 'position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(30,28,50,0.92);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);color:#f0eef8;padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.35);z-index:20000;font-size:13px;max-width:calc(100vw - 40px);text-align:center;opacity:0;transition:opacity .15s;pointer-events:none';
     document.body.appendChild(el);
   }
   el.textContent = text;
   el.style.opacity = '1';
   clearTimeout(window.__toastT);
-  window.__toastT = setTimeout(() => (el.style.opacity = '0'), 2200);
+  const ms = Number(durationMs) > 0 ? Number(durationMs) : 2200;
+  window.__toastT = setTimeout(() => (el.style.opacity = '0'), ms);
 }
 
 function openPremium() {
@@ -2298,7 +2345,9 @@ async function hydratePrices() {
 async function buyProduct(productId, btn) {
   if (!token) return showToast('Bitte zuerst einloggen.');
   const orig = btn?.textContent;
-  if (btn) { btn.disabled = true; btn.textContent = 'Weiter…'; }
+  const isBtn = btn && (btn.tagName === 'BUTTON' || btn.tagName === 'button');
+  if (isBtn) { btn.disabled = true; btn.textContent = 'Weiter…'; }
+  else if (btn?.style) { btn.style.opacity = '0.65'; btn.style.pointerEvents = 'none'; }
   try {
     const res = await fetch(`${API}/payments/checkout`, {
       method: 'POST',
@@ -2318,9 +2367,12 @@ async function buyProduct(productId, btn) {
         throw new Error('Session abgelaufen. Bitte neu einloggen.');
       }
       if (res.status === 404) {
-        throw new Error('Zahlungen sind auf diesem Server-Port nicht aktiv (STRIPE_SECRET_KEY/Server neu starten).');
+        throw new Error('Zahlungen sind hier nicht aktiv (API). STRIPE_SECRET_KEY und BASE_URL im Hosting prüfen.');
       }
-      throw new Error(data.message || `Fehler (${res.status})`);
+      const hint = (data.message || '').includes('Stripe') || res.status === 500
+        ? ' Im Render-Dashboard: STRIPE_SECRET_KEY=sk_test_… (oder Live-Key) und BASE_URL=https://deine-domain setzen.'
+        : '';
+      throw new Error((data.message || `Fehler (${res.status})`) + hint);
     }
     if (data.sessionId) {
       localStorage.setItem('hf_last_session_id', data.sessionId);
@@ -2328,9 +2380,10 @@ async function buyProduct(productId, btn) {
     if (!data.url) throw new Error('Keine Checkout-URL erhalten');
     window.location.href = data.url;
   } catch (e) {
-    showToast(e.message || 'Checkout fehlgeschlagen');
+    showToast(e.message || 'Checkout fehlgeschlagen', 6500);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = orig || 'Auswählen'; }
+    if (isBtn) { btn.disabled = false; btn.textContent = orig || 'Auswählen'; }
+    else if (btn?.style) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
   }
 }
 

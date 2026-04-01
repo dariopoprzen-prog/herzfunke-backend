@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 3000;
 const MESSAGE_COST_COINS = Number(process.env.MESSAGE_COST_COINS || 10); // 10 Herzfunken = 1 Nachricht
 /** Startguthaben für neue normale Nutzer (Herzfunken) */
 const NEW_USER_SIGNUP_COINS = Math.min(1000000, Math.max(0, Number(process.env.NEW_USER_SIGNUP_COINS || 50) || 50));
-const FREE_DAILY_SWIPES = Number(process.env.FREE_DAILY_SWIPES || 40); // Free-User Limit (Premium = unbegrenzt)
+const FREE_DAILY_SWIPES = Number(process.env.FREE_DAILY_SWIPES || 3); // Free-User: Swipes pro Tag (Premium = unbegrenzt)
 const ADMIN_USER_ID = Number(process.env.ADMIN_USER_ID || 0) || null;
 // Ohne ENV: lokal automatisch Admin-Mail (Production: immer ADMIN_EMAIL in Render setzen!)
 const _envAdmin = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -129,6 +129,7 @@ app.get(['/api', '/api/health'], (req, res) => {
     messageCostCoins: MESSAGE_COST_COINS,
     newUserSignupCoins: NEW_USER_SIGNUP_COINS,
     newUserApproxFreeMessages: MESSAGE_COST_COINS > 0 ? Math.floor(NEW_USER_SIGNUP_COINS / MESSAGE_COST_COINS) : 0,
+    freeDailySwipesNonPremium: FREE_DAILY_SWIPES,
     hint: 'API läuft. Admin unter /admin öffnen.',
   });
 });
@@ -1292,7 +1293,11 @@ app.post('/api/swipe', auth, async (req, res) => {
     if (swipesDate !== today) {
       await dbRun('UPDATE users SET swipes_used_today=0, swipes_date=? WHERE id=?', [today, req.user.id]);
     } else if (used >= FREE_DAILY_SWIPES) {
-      return res.status(402).json({ message: 'Tageslimit erreicht. Mit Premium kannst du unbegrenzt swipen & liken.' });
+      return res.status(402).json({
+        message: `Gratis-Limit erreicht (${FREE_DAILY_SWIPES} Swipes pro Tag). Mit Premium kannst du unbegrenzt swipen & liken.`,
+        code: 'SWIPE_LIMIT',
+        limit: FREE_DAILY_SWIPES,
+      });
     }
     await dbRun('UPDATE users SET swipes_used_today = swipes_used_today + 1, swipes_date=? WHERE id=?', [today, req.user.id]);
   } else if (swipesDate !== today) {
