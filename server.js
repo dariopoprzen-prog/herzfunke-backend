@@ -1272,17 +1272,35 @@ app.delete('/api/profile/photos/:photoId', auth, async (req, res) => {
   res.json({ ok: true, photos: await getUserPhotos(req.user.id) });
 });
 
+/** Nur Plattform-Profile (Team/Seed/managed) — normale App-Registrierungen nie im Entdecken. */
+function sqlDiscoverableCondition() {
+  return `account_type IN ('team','seed') OR is_managed=1 OR email LIKE 'seed\\_%@herzfunke.local' ESCAPE '\\'`;
+}
+
 app.get('/api/discover', auth, async (req, res) => {
   const profiles = await dbAll(`
     SELECT id,name,age,city,bio,photo,interests,is_managed FROM users
     WHERE id!=? AND is_bot=0
     AND id NOT IN (SELECT target_id FROM swipes WHERE swiper_id=?)
+    AND (${sqlDiscoverableCondition()})
     ORDER BY RANDOM() LIMIT 20`, [req.user.id, req.user.id]);
   res.json(profiles.map(p => ({ ...p, interests: JSON.parse(p.interests||'[]'), is_managed: Number(p.is_managed||0) })));
 });
 
 app.post('/api/swipe', auth, async (req, res) => {
   const { targetId, action } = req.body;
+  const tid = Number(targetId);
+  if (!Number.isFinite(tid) || tid === Number(req.user.id)) {
+    return res.status(400).json({ message: 'Ungültiges Profil' });
+  }
+  const targetOk = await dbGet(
+    `SELECT id FROM users WHERE id=? AND is_bot=0 AND (${sqlDiscoverableCondition()})`,
+    [tid]
+  );
+  if (!targetOk) {
+    return res.status(403).json({ message: 'Nur vorgestellte Profile können entdeckt werden.' });
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const u = await dbGet('SELECT id, is_premium, swipes_used_today, swipes_date FROM users WHERE id=?', [req.user.id]);
   const isPremium = Number(u?.is_premium || 0) === 1;
@@ -1306,7 +1324,7 @@ app.post('/api/swipe', auth, async (req, res) => {
   }
 
   await dbRun('INSERT OR REPLACE INTO swipes (swiper_id,target_id,action) VALUES (?,?,?)',
-    [req.user.id, targetId, action]);
+    [req.user.id, tid, action]);
   // Kein Match über Swipe: Matches nur per Admin „Matchen“ (POST /api/admin/as/:actorId/match)
   res.json({ isMatch: false });
 });
