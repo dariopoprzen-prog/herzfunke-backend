@@ -1,12 +1,22 @@
 // ===== HERZFUNKE – STRIPE BEZAHLSYSTEM =====
 // npm install stripe
+//
+// Zum Testen: Stripe Dashboard → Entwickler → API-Schlüssel → Geheimschlüssel beginnt mit sk_test_…
+// Test-Karte: 4242 4242 4242 4242, beliebiges zukünftiges Ablaufdatum, CVC 123
 
 const Stripe = require('stripe');
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY nicht gesetzt');
+const STRIPE_SECRET_KEY = (process.env.STRIPE_SECRET_KEY || '').trim();
+const stripe = STRIPE_SECRET_KEY ? Stripe(STRIPE_SECRET_KEY) : null;
+
+function requireStripe() {
+  if (!stripe) {
+    throw new Error(
+      'Stripe ist nicht konfiguriert. Setze STRIPE_SECRET_KEY (lokal: sk_test_… aus dem Stripe-Dashboard) und starte den Server neu.'
+    );
+  }
+  return stripe;
 }
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ============================================================
 // 🔧 PRODUKTE & PREISE – hier anpassen
@@ -77,6 +87,7 @@ const PRODUCTS = {
  * Der Nutzer wird zu Stripe weitergeleitet und kehrt nach Zahlung zurück.
  */
 async function createCheckoutSession({ productId, userId, userEmail, successUrl, cancelUrl }) {
+  const s = requireStripe();
   const product = PRODUCTS[productId];
   if (!product) throw new Error(`Unbekanntes Produkt: ${productId}`);
 
@@ -94,8 +105,8 @@ async function createCheckoutSession({ productId, userId, userEmail, successUrl,
     // Falls keine Price ID → dynamisch erstellen (für Tests)
     let priceId = product.stripePriceId;
     if (!priceId) {
-      const stripeProduct = await stripe.products.create({ name: product.name });
-      const price = await stripe.prices.create({
+      const stripeProduct = await s.products.create({ name: product.name });
+      const price = await s.prices.create({
         product: stripeProduct.id,
         unit_amount: product.amount,
         currency: product.currency,
@@ -104,7 +115,7 @@ async function createCheckoutSession({ productId, userId, userEmail, successUrl,
       priceId = price.id;
     }
 
-    return await stripe.checkout.sessions.create({
+    return await s.checkout.sessions.create({
       ...baseParams,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
@@ -112,7 +123,7 @@ async function createCheckoutSession({ productId, userId, userEmail, successUrl,
 
   } else {
     // Einmalkauf
-    return await stripe.checkout.sessions.create({
+    return await s.checkout.sessions.create({
       ...baseParams,
       mode: 'payment',
       line_items: [{
@@ -132,16 +143,18 @@ async function createCheckoutSession({ productId, userId, userEmail, successUrl,
  * Wichtig: rawBody muss ungeparst übergeben werden!
  */
 function constructWebhookEvent(rawBody, signature) {
+  const s = requireStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) throw new Error('STRIPE_WEBHOOK_SECRET nicht gesetzt');
-  return stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+  return s.webhooks.constructEvent(rawBody, signature, webhookSecret);
 }
 
 /**
  * Gibt Details einer abgeschlossenen Checkout Session zurück.
  */
 async function getSession(sessionId) {
-  return await stripe.checkout.sessions.retrieve(sessionId, {
+  const s = requireStripe();
+  return await s.checkout.sessions.retrieve(sessionId, {
     expand: ['subscription', 'payment_intent'],
   });
 }
@@ -150,7 +163,8 @@ async function getSession(sessionId) {
  * Kündigt ein Abo (am Ende der Laufzeit).
  */
 async function cancelSubscription(subscriptionId) {
-  return await stripe.subscriptions.update(subscriptionId, {
+  const s = requireStripe();
+  return await s.subscriptions.update(subscriptionId, {
     cancel_at_period_end: true,
   });
 }
@@ -159,7 +173,8 @@ async function cancelSubscription(subscriptionId) {
  * Gibt alle aktiven Abos eines Kunden zurück.
  */
 async function getCustomerSubscriptions(customerId) {
-  const subs = await stripe.subscriptions.list({
+  const s = requireStripe();
+  const subs = await s.subscriptions.list({
     customer: customerId,
     status: 'active',
   });
@@ -174,4 +189,5 @@ module.exports = {
   cancelSubscription,
   getCustomerSubscriptions,
   stripe,
+  isStripeConfigured: () => !!stripe,
 };

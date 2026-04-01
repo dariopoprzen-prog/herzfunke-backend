@@ -3,25 +3,92 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Herzfunke Admin</title>
   <style>
     :root { color-scheme: dark; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0b14; color:#e9e8f3; }
     header { padding:16px 18px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:12px; align-items:center; }
     header h1 { margin:0; font-size:16px; font-weight:650; letter-spacing:.2px; }
-    .wrap { display:grid; grid-template-columns: 360px 1fr; height: calc(100vh - 58px); }
+    .wrap { display:grid; grid-template-columns: minmax(320px, 380px) 1fr; height: calc(100vh - 58px); }
     .panel { border-right:1px solid rgba(255,255,255,.08); overflow:auto; }
-    .panel .bar { padding:12px; position:sticky; top:0; background:#0b0b14; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:8px; }
+    .panel .bar { padding:12px; position:sticky; top:0; z-index:3; background:#0b0b14; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .panel .bar .btnNewAccount { flex-shrink:0; white-space:nowrap; font-weight:750; }
     .panel .bar2 { padding:10px 12px; position:sticky; top:58px; background:#0b0b14; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:8px; }
     input, button, select, textarea { background:#141427; border:1px solid rgba(255,255,255,.10); color:#e9e8f3; border-radius:10px; padding:10px 12px; font-size:13px; }
     button { cursor:pointer; border:none; background: linear-gradient(135deg,#ff5f8a,#d9437a); font-weight:650; }
     button.secondary { background:#141427; border:1px solid rgba(255,255,255,.10); font-weight:600; }
-    .list { padding:10px; display:flex; flex-direction:column; gap:8px; }
-    .user { padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background: rgba(255,255,255,.03); cursor:pointer; }
-    .user.active { outline: 2px solid rgba(255,95,138,.55); }
-    .user .top { display:flex; justify-content:space-between; gap:10px; align-items:center; }
-    .user .name { font-weight:700; font-size:13px; }
-    .user .meta { font-size:12px; color: rgba(233,232,243,.7); margin-top:4px; }
+    .listsGrid { padding:12px; display:grid; grid-template-columns: 1fr; gap:14px; }
+    .secTitle { font-size:12px; letter-spacing:.6px; color: rgba(233,232,243,.7); text-transform:uppercase; padding: 0 2px; }
+    .list { display:grid; grid-template-columns: 1fr; gap:10px; }
+    .cardUser {
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      overflow:visible;
+      background: rgba(255,255,255,.03);
+      cursor:pointer;
+      display:flex;
+      gap:10px;
+      padding:10px;
+      align-items:center;
+    }
+    .cardUser.active { outline: 2px solid rgba(255,95,138,.55); }
+    .uImg { width:54px; height:54px; border-radius:14px; object-fit:cover; background:#141427; flex-shrink:0; }
+    .uImgPlaceholder { border:1px dashed rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:750; color:rgba(233,232,243,.38); }
+    .uInfo { flex:1; min-width:0; }
+    /* Wie App: Name + Badge in einer Zeile */
+    .chat-item-name-row {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+      width:100%;
+      flex-wrap:nowrap;
+    }
+    .chat-item-name-row h4 {
+      font-size:14px;
+      font-weight:500;
+      margin:0;
+      min-width:0;
+      flex:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color:#e9e8f3;
+    }
+    /* Team-Karten (oben) nutzen noch .uName */
+    .uName { font-weight:800; font-size:13px; }
+    .chat-unread-near-name {
+      flex-shrink:0;
+      min-width:20px;
+      height:20px;
+      padding:0 6px;
+      border-radius:10px;
+      background:#e8607a;
+      color:#fff !important;
+      font-size:11px;
+      font-weight:800;
+      display:inline-flex !important;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+      box-shadow:0 0 0 2px rgba(232,96,122,0.35);
+      visibility:visible;
+      opacity:1;
+    }
+    .uMeta { font-size:12px; color: rgba(233,232,243,.7); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pill { display:inline-block; font-size:10px; padding:2px 8px; border-radius:999px; margin-left:6px; border:1px solid rgba(255,255,255,.12); color:rgba(233,232,243,.85); }
+    .pill.managed { border-color: rgba(209,163,87,.35); color:#f3d6a1; background: rgba(209,163,87,.14); }
+    .uActions { flex-shrink:0; display:flex; gap:8px; align-items:center; }
+    .uActions button { padding:7px 10px;border-radius:10px;font-size:12px; }
+    .photosRow { grid-column:1/-1; display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding: 2px 0; }
+    .photoThumb { width:52px; height:52px; border-radius:14px; object-fit:cover; border:1px solid rgba(255,255,255,.10); cursor:pointer; }
+    .photoThumb.primary { outline:2px solid rgba(255,95,138,.55); }
+    .thumbWrap { position: relative; width:52px; height:52px; }
+    .thumbDel { position:absolute; right:-6px; top:-6px; width:22px; height:22px; border-radius:999px; border:1px solid rgba(255,255,255,.18); background:rgba(20,20,39,.92); color:rgba(233,232,243,.92); font-size:12px; line-height:20px; text-align:center; cursor:pointer; }
+    .thumbDel:hover { background:rgba(255,95,138,.18); border-color: rgba(255,95,138,.35); }
+    .photoActions { display:flex; gap:8px; align-items:center; }
+    .photoActions input[type="file"] { width: 260px; padding: 8px 10px; }
     .main { display:flex; flex-direction:column; min-width:0; }
     .chatHead { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; gap:10px; }
     .chatHead .title { font-weight:750; }
@@ -31,9 +98,22 @@
     .bubble { padding:10px 12px; border-radius:14px; background:#1a1930; border:1px solid rgba(255,255,255,.08); }
     .msg.me .bubble { background: linear-gradient(135deg,#ff5f8a,#d9437a); border:none; }
     .time { font-size:11px; color: rgba(233,232,243,.55); margin-top:4px; padding:0 4px; }
-    .composer { border-top:1px solid rgba(255,255,255,.08); padding:10px; display:flex; gap:8px; }
-    .composer textarea { flex:1; resize:none; height:42px; border-radius:12px; }
+    .composer { border-top:1px solid rgba(255,255,255,.08); padding:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+    .composer textarea { flex:1; min-width:160px; resize:none; height:42px; border-radius:12px; }
+    .composer .btnImgSend { white-space:nowrap; padding:10px 14px; font-size:13px; font-weight:650; }
     .hint { color: rgba(233,232,243,.65); font-size:12px; padding: 0 14px 12px; }
+    .chatHint strong { color: rgba(233,232,243,.88); font-weight:750; }
+    .composerLockHint {
+      display: none;
+      margin: 0 14px 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,95,138,.12);
+      border: 1px solid rgba(255,95,138,.35);
+      font-size: 13px;
+      color: rgba(233,232,243,.9);
+      line-height: 1.45;
+    }
     .toastWrap { position: fixed; right: 14px; top: 72px; display:flex; flex-direction:column; gap:10px; z-index: 9999; width: min(420px, calc(100vw - 28px)); }
     .toast { padding: 12px 12px; border-radius: 14px; background: rgba(20,20,39,0.95); border: 1px solid rgba(255,255,255,.10); box-shadow: 0 18px 50px rgba(0,0,0,.55); }
     .toast .t { font-weight: 800; font-size: 13px; }
@@ -41,28 +121,72 @@
     .toast .actions { display:flex; gap:8px; margin-top: 10px; }
     .toast .actions button { padding: 8px 10px; border-radius: 10px; font-size: 12px; }
     .toast .actions button.secondary { background:#141427; border:1px solid rgba(255,255,255,.10); }
+    #createUserPanel {
+      position: sticky; top: 58px; z-index: 2;
+      background: linear-gradient(180deg, rgba(20,20,39,.98), rgba(11,11,20,.96));
+      border-bottom: 1px solid rgba(255,95,138,.22);
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+    }
+    #createUserPanel .secTitle { color: #ffb8cc; }
+    .create-toggle {
+      width: 100%; text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 750;
+      border-radius: 12px; background: linear-gradient(135deg,#ff5f8a,#d9437a); color: #fff;
+      border: none; cursor: pointer;
+    }
+    .createUserInner { padding: 0 0 8px 0; }
+    #createUserPanel:not(.open) .createUserInner { display: none; }
+    #createUserPanel.open .create-toggle { opacity: 0.92; }
+    #createUserPanel .createUserInner input, #createUserPanel .createUserInner button#btnCreateUser { padding: 8px 10px; font-size: 12px; }
   </style>
 </head>
 <body>
-  <header>
+  <header style="flex-wrap:wrap;gap:8px">
     <h1>Herzfunke Admin</h1>
     <span id="status" style="font-size:12px;color:rgba(233,232,243,.7)"></span>
+    <button class="secondary" id="btnDebugUnread" style="margin-left:auto;display:none">Debug Unread</button>
+    <span id="apiHint" style="font-size:11px;color:rgba(233,232,243,.45);width:100%"></span>
   </header>
 
   <div class="wrap">
     <div class="panel">
       <div class="bar">
-        <input id="token" placeholder="Admin Token (hf_token)" style="flex:1" />
+        <input id="token" placeholder="Admin Token (hf_token)" style="flex:1; min-width:140px" />
         <button class="secondary" id="btnLoad">Laden</button>
+        <button type="button" class="btnNewAccount" id="btnJumpCreate" title="Neues Team-Profil aufklappen">＋</button>
+      </div>
+      <div class="bar2" style="flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:0">
+        <span style="font-size:11px;color:rgba(233,232,243,.65);width:100%;margin-bottom:4px">Node-API (nur bei 404 / Live Server):</span>
+        <input id="apiRoot" placeholder="z.B. http://localhost:3004" style="flex:1;min-width:160px" title="Ohne /api — gleicher Port wie node server.js" />
+        <button type="button" class="secondary" id="btnSaveApi">Speichern &amp; neu laden</button>
       </div>
       <div class="bar2">
-        <select id="filterManaged" style="flex:1">
-          <option value="all">Alle Profile</option>
-          <option value="managed">Nur betreute Profile</option>
-        </select>
-        <input id="q" placeholder="Suche (Name/City/ID)" style="flex:1" />
+        <input id="qTeam" placeholder="Suche Team (Name/ID)" style="flex:1" />
+        <input id="qUser" placeholder="Suche Nutzer (Name/City/ID)" style="flex:1" />
       </div>
-      <div class="list" id="users"></div>
+      <div id="createUserPanel" class="create-box" style="padding:8px 10px">
+        <button type="button" class="create-toggle" id="createUserToggle" aria-expanded="false">＋ Neues Team-Profil</button>
+        <div class="createUserInner" id="createUserInner">
+          <div class="secTitle" style="margin-top:10px">Daten</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+            <input id="newName" placeholder="Name" style="grid-column:1/-1" />
+            <input id="newAge" placeholder="Alter" type="number" min="18" max="99" value="25" />
+            <input id="newCoins" placeholder="Herzfunken" type="number" min="0" value="0" />
+            <input id="newCity" placeholder="Stadt (optional)" style="grid-column:1/-1" />
+          </div>
+          <button type="button" id="btnCreateUser" style="margin-top:8px;width:100%;font-weight:750">Team-Profil erstellen</button>
+          <div style="font-size:10px;color:rgba(233,232,243,.5);margin-top:6px;line-height:1.35">Nur betreute Profile. Login-Daten erscheinen nach dem Erstellen.</div>
+        </div>
+      </div>
+      <div class="listsGrid">
+        <div>
+          <div class="secTitle">Unsere Profile</div>
+          <div class="list" id="teamList"></div>
+        </div>
+        <div>
+          <div class="secTitle">Nutzer</div>
+          <div class="list" id="users"></div>
+        </div>
+      </div>
     </div>
 
     <div class="main">
@@ -71,7 +195,8 @@
           <div class="title" id="chatTitle">Kein Nutzer ausgewählt</div>
           <div style="font-size:12px;color:rgba(233,232,243,.65)" id="chatSub"></div>
         </div>
-        <div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="secondary" id="btnMatch" title="Match zwischen gewähltem Team-Profil und gewähltem Nutzer">Matchen</button>
           <button class="secondary" id="btnRefresh">Refresh</button>
           <button class="secondary" id="btnManaged">Betreut an/aus</button>
         </div>
@@ -93,27 +218,469 @@
         </select>
         <input id="eInterests" placeholder="Interessen (kommagetrennt)" style="grid-column:1/-1" />
         <textarea id="eBio" placeholder="Bio" style="grid-column:1/-1;height:68px"></textarea>
+        <div class="photosRow" id="photoRow">
+          <div style="font-size:12px;color:rgba(233,232,243,.65);min-width:70px">Bilder</div>
+          <div id="photoThumbs" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+          <div class="photoActions" style="margin-left:auto">
+            <input id="photoFile" type="file" accept="image/*" />
+            <button class="secondary" id="btnAddPhoto">Hinzufügen</button>
+            <button class="secondary" id="btnDelAllPhotos">Alle löschen</button>
+          </div>
+        </div>
         <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
           <button class="secondary" id="btnApply">Änderungen speichern</button>
         </div>
       </div>
       <div class="msgs" id="msgs"></div>
-      <div class="hint">Du schreibst als Admin-Account an den Nutzer (Match wird automatisch erstellt, falls nicht vorhanden).</div>
-      <div class="composer">
-        <textarea id="text" placeholder="Antwort schreiben…"></textarea>
+      <div class="hint chatHint">
+        <strong>So geht’s:</strong> Links „Unsere Profile“ = <em>Senden als</em> · Nutzer anklicken · <strong>zuerst „Matchen“</strong> (nur so erscheint das Match in der App) · danach <strong>Text</strong> oder <strong>Bild senden</strong>.
+      </div>
+      <div class="composerLockHint" id="composerLockHint" role="status"></div>
+      <div class="composer" id="adminComposer">
+        <input type="file" id="adminChatImage" accept="image/*" style="display:none" />
+        <button class="secondary btnImgSend" type="button" id="btnAdminImage" title="Bild im Chat senden">Bild senden</button>
+        <textarea id="text" placeholder="Nachricht…"></textarea>
         <button id="send">Senden</button>
       </div>
     </div>
   </div>
   <div class="toastWrap" id="toasts"></div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const API = `${window.location.origin}/api`;
+    // Reihenfolge: ?api= in URL → localStorage hf_api → sonst relative /api (nur wenn Admin über denselben Node-Server geöffnet ist).
+    // Bei Live Server / anderem Port: hf_api setzen, z. B. http://localhost:3004
+    function normalizeApiRoot(raw) {
+      let s = String(raw || '').trim().replace(/\/+$/, '');
+      if (!s) return '';
+      s = s.replace(/\/api\/?$/i, '');
+      return s;
+    }
+    function apiBase() {
+      try {
+        const q = new URLSearchParams(window.location.search).get('api');
+        if (q && normalizeApiRoot(q)) {
+          localStorage.setItem('hf_api', normalizeApiRoot(q));
+          if (window.history.replaceState) {
+            const u = new URL(window.location.href);
+            u.searchParams.delete('api');
+            window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+          }
+        }
+      } catch {}
+      const stored = normalizeApiRoot(localStorage.getItem('hf_api') || '');
+      if (stored) return stored.endsWith('/api') ? stored : `${stored}/api`;
+      // Vom Node-Server injiziert (Pfad /admin vor express.static — sonst fehlt die Variable)
+      if (typeof window.__HF_API_BASE__ === 'string' && window.__HF_API_BASE__.trim()) {
+        return window.__HF_API_BASE__.trim().replace(/\/+$/, '');
+      }
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return '/api';
+      }
+      return 'http://localhost:3000/api';
+    }
+    function apiOrigin() {
+      const b = apiBase();
+      if (String(b).startsWith('/')) return window.location.origin;
+      return String(b).replace(/\/api$/i, '');
+    }
+    /** Volle URL zum API-Pfad (z. B. /admin/team-profile) — immer korrekter Origin bei relativem /api */
+    function apiEndpoint(suffix) {
+      const path = String(suffix || '').startsWith('/') ? suffix : '/' + suffix;
+      const b = apiBase();
+      if (String(b).startsWith('/')) {
+        const root = b.replace(/\/$/, '');
+        try {
+          return new URL(root + path, window.location.origin || 'http://localhost').href;
+        } catch {
+          return root + path;
+        }
+      }
+      return String(b).replace(/\/$/, '') + path;
+    }
+    (function showApiHint() {
+      const el = document.getElementById('apiHint');
+      if (!el) return;
+      const b = apiBase();
+      const shown = String(b).startsWith('/') ? `${window.location.origin}${b}` : b;
+      el.textContent = `API: ${shown} · injiziert: ${window.__HF_API_BASE__ || '—'} · hf_api: ${localStorage.getItem('hf_api') || '—'}`;
+    })();
+    document.getElementById('apiRoot').value = normalizeApiRoot(localStorage.getItem('hf_api') || '') || '';
+    document.getElementById('btnSaveApi').onclick = () => {
+      const v = normalizeApiRoot(document.getElementById('apiRoot').value);
+      if (!v) {
+        localStorage.removeItem('hf_api');
+      } else {
+        localStorage.setItem('hf_api', v);
+      }
+      location.reload();
+    };
     let activeUser = null;
     let activeMatchId = null;
     let adminId = null;
     let socket = null;
+    let actorId = null; // Team-Profil, als das wir schreiben
+    let editTarget = null; // Profil, das wir bearbeiten (Nutzer oder unser Profil)
+    /** Wie App: GET matches mit unread_count + lokaler Socket-Fallback pro matchId */
+    window.__adminMatchesCache = window.__adminMatchesCache || [];
+    window.__adminUnreadByUser = window.__adminUnreadByUser || new Map();
+    const adminChatListLocalUnread = new Map();
+    window.__adminPushMatchToUser = window.__adminPushMatchToUser || new Map(); // matchId -> userId (für Badge-Mapping bei Live-Push)
+    // UI-only Unreads, App-like:
+    // - pro Nutzer→Team-Kombination zählen (damit es für mehrere Accounts parallel klappt)
+    const adminLocalUnreadByUserTeam = new Map(); // key "userId:teamId" -> count
+    const adminLocalUnreadByTeam = new Map(); // teamId -> local unread counter (UI-only, app-like)
+    const adminSrvUnreadByUserTeam = new Map(); // key "userId:teamId" -> count (aus API /matches pro Team)
+    const adminSrvUnreadByTeam = new Map(); // teamId -> count (Summe aus API /matches)
+    window.__adminLastRecipientByUser = window.__adminLastRecipientByUser || new Map(); // userId -> last teamId (für "→ …")
+    let adminUnreadPollTimer = null;
+    let adminAllTeamUnreadPollTimer = null;
+    let adminChatPollTimer = null;
+
+    function setCardBadgeDom(attrName, idRaw, n) {
+      const id = Number(idRaw);
+      const el = document.querySelector(`.cardUser[${attrName}="${id}"]`);
+      if (!el) return;
+      const row = el.querySelector('.chat-item-name-row');
+      if (!row) return;
+      let badge = row.querySelector('.chat-unread-near-name');
+      const val = Math.min(99, Math.max(0, Number(n) || 0));
+      if (val <= 0) {
+        if (badge) badge.remove();
+        return;
+      }
+      const lab = val > 9 ? '9+' : String(val);
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'chat-unread-near-name';
+        row.appendChild(badge);
+      }
+      badge.textContent = lab;
+      badge.setAttribute('aria-label', `${val} ungelesen`);
+    }
+
+    function userTeamKey(uid, tid) { return `${Number(uid)}:${Number(tid)}`; }
+
+    function localUnreadTotalForUser(uid) {
+      const id = Number(uid);
+      if (!id) return 0;
+      let sum = 0;
+      for (const [k, v] of adminLocalUnreadByUserTeam.entries()) {
+        if (String(k).startsWith(id + ':')) sum += Number(v) || 0;
+      }
+      return Math.min(99, Math.max(0, sum));
+    }
+
+    function srvUnreadTotalForUser(uid) {
+      const id = Number(uid);
+      if (!id) return 0;
+      let sum = 0;
+      for (const [k, v] of adminSrvUnreadByUserTeam.entries()) {
+        if (String(k).startsWith(id + ':')) sum += Number(v) || 0;
+      }
+      return Math.min(99, Math.max(0, sum));
+    }
+
+    function unreadTeamsForUser(uid) {
+      const id = Number(uid);
+      const teams = new Map(); // teamId -> count (local+srv)
+      if (!id) return [];
+      try {
+        for (const [k, v] of adminLocalUnreadByUserTeam.entries()) {
+          const [a, b] = String(k).split(':').map(Number);
+          if (a !== id) continue;
+          const n = Number(v) || 0;
+          if (b && n > 0) teams.set(b, Math.max(teams.get(b) || 0, n));
+        }
+        for (const [k, v] of adminSrvUnreadByUserTeam.entries()) {
+          const [a, b] = String(k).split(':').map(Number);
+          if (a !== id) continue;
+          const n = Number(v) || 0;
+          if (b && n > 0) teams.set(b, Math.max(teams.get(b) || 0, n));
+        }
+      } catch {}
+      return [...teams.entries()]
+        .sort((x, y) => (y[1] - x[1]) || (x[0] - y[0]))
+        .map(([teamId]) => teamId);
+    }
+
+    function bumpUserUnreadForTeam(uid, teamId) {
+      const u = Number(uid);
+      const t = Number(teamId);
+      if (!u || !t) return;
+      const k = userTeamKey(u, t);
+      const next = Math.min(99, (Number(adminLocalUnreadByUserTeam.get(k)) || 0) + 1);
+      adminLocalUnreadByUserTeam.set(k, next);
+      // Nutzer-Badge zeigt Summe über alle Empfänger (damit man sieht "da ist was")
+      setCardBadgeDom('data-user-id', u, adminUnreadForUserCard({ id: u }));
+    }
+
+    function bumpTeamUnread(teamId) {
+      const id = Number(teamId);
+      if (!id) return;
+      const next = Math.min(99, (adminLocalUnreadByTeam.get(id) || 0) + 1);
+      adminLocalUnreadByTeam.set(id, next);
+      setCardBadgeDom('data-team-id', id, next);
+    }
+
+    function localTeamSum(teamId) {
+      const tid = Number(teamId);
+      if (!tid) return 0;
+      let sum = 0;
+      for (const [k, v] of adminLocalUnreadByUserTeam.entries()) {
+        const parts = String(k).split(':');
+        if (Number(parts[1]) !== tid) continue;
+        sum += Number(v) || 0;
+      }
+      return Math.min(99, Math.max(0, sum));
+    }
+
+    function srvTeamSum(teamId) {
+      const tid = Number(teamId);
+      if (!tid) return 0;
+      let sum = 0;
+      for (const [k, v] of adminSrvUnreadByUserTeam.entries()) {
+        const parts = String(k).split(':');
+        if (Number(parts[1]) !== tid) continue;
+        sum += Number(v) || 0;
+      }
+      return Math.min(99, Math.max(0, sum));
+    }
+
+    function recomputeTeamBadge(teamId) {
+      const tid = Number(teamId);
+      if (!tid) return;
+      const loc = localTeamSum(tid);
+      adminLocalUnreadByTeam.set(tid, loc);
+      const srv = Number(adminSrvUnreadByTeam.get(tid) || srvTeamSum(tid) || 0);
+      adminSrvUnreadByTeam.set(tid, srv);
+      setCardBadgeDom('data-team-id', tid, Math.max(loc, srv));
+    }
+
+    function clearUnreadForUserTeam(userId, teamId, matchId) {
+      const uid = Number(userId);
+      const tid = Number(teamId);
+      if (!uid || !tid) return;
+      // lokale Zähler zurücksetzen (nur für diesen Empfänger)
+      try { adminLocalUnreadByUserTeam.delete(userTeamKey(uid, tid)); } catch {}
+      // serverseitige Cache-Werte optimistisch zurücksetzen (damit Badge sofort weg ist)
+      try { adminSrvUnreadByUserTeam.delete(userTeamKey(uid, tid)); } catch {}
+      // match-local auch weg
+      if (matchId) {
+        try { adminChatListLocalUnread.delete(Number(matchId)); } catch {}
+      }
+      // Nutzer-Badge neu berechnen
+      setCardBadgeDom('data-user-id', uid, adminUnreadForUserCard({ id: uid }));
+      // Team-Badge neu berechnen
+      recomputeTeamBadge(tid);
+    }
+
+    function stopAdminChatPoll() {
+      if (adminChatPollTimer) clearInterval(adminChatPollTimer);
+      adminChatPollTimer = null;
+    }
+    function restartAdminChatPoll() {
+      stopAdminChatPoll();
+      if (!activeUser || !actorId) return;
+      adminChatPollTimer = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        void loadConversation(true);
+      }, 2500);
+    }
+
+    /** Immer gültiges „Senden als“-Profil, auch wenn Team-Suche die Liste leert. */
+    function ensureActorIdFromTeamCache() {
+      const teams = window.__teamCache || [];
+      if (!teams.length) {
+        actorId = null;
+        return;
+      }
+      const ok = actorId != null && teams.some(t => Number(t.id) === Number(actorId));
+      if (!ok) actorId = Number(teams[0].id);
+    }
+
+    function matchRowIdAdmin(m) {
+      return Number(m.match_id != null ? m.match_id : m.matchId);
+    }
+    function adminUnreadSetEntry(uid, mid, srv) {
+      const u = Number(uid);
+      const mi = Number(mid);
+      const s = Math.min(99, Math.max(0, Number(srv) || 0));
+      if (!Number.isFinite(u) || u <= 0 || !Number.isFinite(mi) || mi <= 0) return;
+      const e = { mid: mi, srv: s };
+      window.__adminUnreadByUser.set(u, e);
+      window.__adminUnreadByUser.set(String(u), e);
+    }
+    function adminUnreadGetEntry(u) {
+      const id = Number(u.id);
+      if (!Number.isFinite(id)) return null;
+      return window.__adminUnreadByUser.get(id) ?? window.__adminUnreadByUser.get(String(id));
+    }
+    function adminUnreadForUserCard(u) {
+      const id = Number(u.id);
+      const entry = adminUnreadGetEntry(u);
+      let srv = entry ? entry.srv : 0;
+      let mid = entry ? entry.mid : 0;
+      const mc = window.__adminMatchesCache || [];
+      const row = mc.find(x => Number(x.user_id) === id);
+      if (row) {
+        const m = matchRowIdAdmin(row);
+        const ur = Math.min(99, Math.max(0, Number(row.unread_count ?? row.unreadCount ?? 0)));
+        srv = Math.max(srv, ur);
+        if (!mid && m) mid = m;
+      }
+      const loc = mid ? (adminChatListLocalUnread.get(mid) || 0) : 0;
+      const uLocTotal = localUnreadTotalForUser(id);
+      const uSrvTotal = srvUnreadTotalForUser(id);
+      return Math.min(99, Math.max(srv, loc, uLocTotal, uSrvTotal));
+    }
+
+    async function refreshAllTeamUnreadFromServer() {
+      const teams = window.__teamCache || [];
+      if (!teams.length) return;
+      const ids = teams.map(t => Number(t.id)).filter(x => Number.isFinite(x) && x > 0).slice(0, 200);
+      if (!ids.length) return;
+      const fetchOpts = { headers: authHeaders(), cache: 'no-store' };
+      try {
+        const results = await Promise.allSettled(
+          ids.map(async (tid) => {
+            const base = `${apiBase()}/admin/as/${encodeURIComponent(String(tid))}`;
+            const res = await fetch(`${base}/matches`, fetchOpts);
+            const body = await res.json().catch(() => null);
+            if (!res.ok || !Array.isArray(body)) return { tid, ok: false };
+            let teamSum = 0;
+            for (const row of body) {
+              const uid = Number(row.user_id);
+              const n = Math.min(99, Math.max(0, Number(row.unread_count ?? row.unreadCount ?? 0)));
+              if (!uid || n <= 0) continue;
+              teamSum = Math.min(99, teamSum + n);
+              adminSrvUnreadByUserTeam.set(userTeamKey(uid, tid), n);
+            }
+            adminSrvUnreadByTeam.set(tid, teamSum);
+            return { tid, ok: true, teamSum };
+          })
+        );
+        for (const r of results) {
+          if (r.status !== 'fulfilled') continue;
+          const tid = Number(r.value?.tid || 0);
+          if (!tid) continue;
+          const srv = Number(adminSrvUnreadByTeam.get(tid) || 0);
+          const loc = Number(adminLocalUnreadByTeam.get(tid) || 0);
+          setCardBadgeDom('data-team-id', tid, Math.max(srv, loc));
+        }
+        renderUsers();
+        renderTeam();
+      } catch {}
+    }
+
+    /** @returns {Promise<string|null>} Fehlertext oder null bei Erfolg */
+    async function refreshAdminUnreadFromServer() {
+      ensureActorIdFromTeamCache();
+      // Badges sollen wie in der App zählen: immer für den eingeloggten Admin-User (adminId),
+      // unabhängig davon, welches "Senden als" (actorId) gerade aktiv ist.
+      const viewerId = adminId ? Number(adminId) : (actorId ? Number(actorId) : 0);
+      if (!viewerId) {
+        window.__adminMatchesCache = [];
+        window.__adminUnreadByUser = new Map();
+        adminChatListLocalUnread.clear();
+        window.__adminUnreadDebug = { ok: false, reason: 'no_actorId' };
+        renderUsers();
+        return null;
+      }
+      const fetchOpts = { headers: authHeaders(), cache: 'no-store' };
+      try {
+        const aid = encodeURIComponent(String(viewerId));
+        const base = `${apiBase()}/admin/as/${aid}`;
+        const [resU, resM] = await Promise.all([
+          fetch(`${base}/unread-per-match`, fetchOpts),
+          fetch(`${base}/matches`, fetchOpts),
+        ]);
+        const uBody = await resU.json().catch(() => null);
+        const mBody = await resM.json().catch(() => null);
+        const errs = [];
+
+        window.__adminUnreadByUser = new Map();
+        if (resM.ok && Array.isArray(mBody)) {
+          window.__adminMatchesCache = mBody.map(r => ({ ...r }));
+          for (const row of mBody) {
+            const uid = Number(row.user_id);
+            const mid = matchRowIdAdmin(row);
+            const n = Math.min(99, Math.max(0, Number(row.unread_count ?? row.unreadCount ?? 0)));
+            if (!Number.isFinite(uid) || !Number.isFinite(mid) || uid <= 0 || mid <= 0) continue;
+            if (n > 0) adminChatListLocalUnread.delete(mid);
+            adminUnreadSetEntry(uid, mid, n);
+          }
+        } else {
+          window.__adminMatchesCache = [];
+          errs.push(
+            resM.ok
+              ? null
+              : (mBody && mBody.message ? `Matches: ${mBody.message}` : `Matches: HTTP ${resM.status}`)
+          );
+        }
+
+        const arr = resU.ok && Array.isArray(uBody) ? uBody : [];
+        if (!resU.ok) {
+          errs.push(uBody && uBody.message ? `Ungelesen-API: ${uBody.message}` : `Ungelesen-API: HTTP ${resU.status}`);
+        }
+        for (const it of arr) {
+          const uid = Number(it.userId ?? it.user_id);
+          const mid = Number(it.matchId ?? it.match_id);
+          const n = Math.min(99, Math.max(0, Number(it.unread) || 0));
+          if (!Number.isFinite(uid) || !Number.isFinite(mid) || uid <= 0 || mid <= 0) continue;
+          if (n > 0) adminChatListLocalUnread.delete(mid);
+          const prev = adminUnreadGetEntry({ id: uid });
+          const merged = Math.max(prev ? prev.srv : 0, n);
+          adminUnreadSetEntry(uid, mid, merged);
+        }
+
+        // Live-Push kann matchId kennen, aber (noch) nicht in /matches auftauchen:
+        // Mapping matchId->userId stabil halten, damit Badge neben dem Namen gerendert werden kann.
+        try {
+          for (const [mid, uid] of (window.__adminPushMatchToUser || new Map()).entries()) {
+            const m = Number(mid);
+            const u = Number(uid);
+            if (!m || !u) continue;
+            if ((adminChatListLocalUnread.get(m) || 0) > 0) {
+              const prev = adminUnreadGetEntry({ id: u });
+              if (!prev || Number(prev.mid) !== m) adminUnreadSetEntry(u, m, prev ? prev.srv : 0);
+            }
+          }
+        } catch {}
+
+        window.__adminChatsMitUngelesen = (window.__adminMatchesCache || []).reduce(
+          (n, row) => n + (adminUnreadForUserCard({ id: row.user_id }) > 0 ? 1 : 0),
+          0
+        );
+
+        // Debug-Infos (damit wir sofort sehen, ob Port/actorId/Endpoints stimmen)
+        const actor = (window.__teamCache || []).find(t => Number(t.id) === Number(actorId));
+        const viewer = (window.__teamCache || []).find(t => Number(t.id) === Number(viewerId))
+          || (window.__usersCache || []).find(u => Number(u.id) === Number(viewerId));
+        const debug = {
+          ok: true,
+          actorId: actorId != null ? Number(actorId) : null,
+          actorName: actor?.name || null,
+          viewerId: Number(viewerId),
+          viewerName: viewer?.name || null,
+          matchesOk: !!resM.ok,
+          unreadOk: !!resU.ok,
+          matchesCount: Array.isArray(window.__adminMatchesCache) ? window.__adminMatchesCache.length : 0,
+          unreadArrCount: arr.length,
+          chatsWithUnread: Number(window.__adminChatsMitUngelesen || 0),
+        };
+        window.__adminUnreadDebug = debug;
+
+        renderUsers();
+        const errStr = errs.filter(Boolean).join(' · ');
+        if (errStr) return errStr;
+        if ((debug.matchesCount || 0) > 0 && (debug.chatsWithUnread || 0) === 0) {
+          return `Ungelesen=0 (Viewer: ${debug.viewerName || '—'} #${debug.viewerId} · matches=${debug.matchesCount} · unreadRows=${debug.unreadArrCount})`;
+        }
+        return null;
+      } catch {
+        return 'Ungelesen: Netzwerkfehler';
+      }
+    }
 
     function authHeaders() {
       const t = document.getElementById('token').value.trim();
@@ -121,6 +688,14 @@
     }
     function setStatus(s) { document.getElementById('status').textContent = s; }
     function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    /** Listen-Avatar: kein Zufallsfoto — nur echtes users.photo oder neutraler Platzhalter */
+    function listAvatarHtml(photo, name) {
+      const p = String(photo || '').trim();
+      if (p) return `<img class="uImg" src="${esc(p)}" alt="">`;
+      const ch = String(name || '').trim().slice(0, 1);
+      const initial = ch ? ch.toUpperCase() : '?';
+      return `<div class="uImg uImgPlaceholder" title="Noch kein Foto">${esc(initial)}</div>`;
+    }
     function fmt(ts){
       try { return new Date(ts).toLocaleString('de-DE', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' }); }
       catch { return ''; }
@@ -145,39 +720,116 @@
       setTimeout(() => { try { el.remove(); } catch {} }, 12000);
     }
 
+    async function ensureSocketLib() {
+      if (window.io) return true;
+      return await new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = `${apiOrigin()}/socket.io/socket.io.js`;
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.head.appendChild(s);
+      });
+    }
+
+    function requestAdminsRoom() {
+      if (!socket || !socket.connected) return;
+      try {
+        socket.emit('join_admins_if_allowed', (res) => {
+          if (res && res.ok) window.__adminLivePushOk = true;
+        });
+      } catch {}
+    }
+
     function ensureSocket() {
       const t = document.getElementById('token').value.trim();
       if (!t) return;
-      if (socket) return;
       if (!window.io) return;
-      socket = window.io({ auth: { token: t } });
-      socket.on('connect', () => setStatus('Live verbunden ✓'));
-      socket.on('connect_error', () => setStatus('Live Verbindung fehlgeschlagen'));
+      if (socket) {
+        requestAdminsRoom();
+        return;
+      }
+      socket = window.io(apiOrigin(), {
+        auth: { token: t },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 20,
+        reconnectionDelay: 800
+      });
+      socket.on('connect', () => {
+        setStatus('Live verbunden ✓');
+        requestAdminsRoom();
+      });
+      socket.on('connect_error', () => setStatus('Live Verbindung fehlgeschlagen (Token prüfen, gleicher Host wie API)'));
       socket.on('managed_message', async (payload) => {
         try {
           const msg = payload?.message;
           if (!msg) return;
-          const fromId = Number(payload?.fromUserId || msg.sender_id);
-          const toId = Number(payload?.toUserId || 0);
-          const matchId = Number(payload?.matchId || 0);
+          const fromId = Number(payload?.fromUserId ?? msg.sender_id ?? 0);
+          const toId = Number(
+            payload?.toUserId ??
+            payload?.to_user_id ??
+            payload?.toId ??
+            payload?.to ??
+            msg.toUserId ??
+            msg.to_user_id ??
+            0
+          );
+          const matchId = Number(payload?.matchId ?? msg.match_id ?? 0);
+          // Admin-Badges: sobald eine Nachricht reinkommt, sofort "1" neben dem Sender anzeigen.
+          // NICHT an toUserId koppeln (Payloads können variieren); entscheidend ist: Sender != wir.
+          const viewerId = adminId ? Number(adminId) : (actorId != null ? Number(actorId) : 0);
+          if (!viewerId || !matchId || !fromId || fromId === viewerId) return;
+          if (toId) {
+            window.__adminLastRecipientByUser.set(Number(fromId), Number(toId));
+            bumpTeamUnread(toId);
+          }
 
-          // Wenn offen: sofort refresh
-          if (activeMatchId && matchId && Number(matchId) === Number(activeMatchId)) {
-            await loadConversation();
+          // Wenn Chat offen & sichtbar: nicht als ungelesen zählen.
+          if (activeMatchId && Number(activeMatchId) === matchId && document.visibilityState === 'visible') {
+            await loadConversation(true);
             return;
           }
 
-          const fromUser = (window.__usersCache || []).find(u => Number(u.id) === fromId);
-          const who = fromUser ? `${fromUser.name} (#${fromUser.id})` : `User #${fromId}`;
-          showToast('Neue Nachricht', `${who}: ${String(msg.text || '').slice(0, 120)}`, async () => {
-            if (fromUser) await selectUser(fromUser);
-            else {
-              // fallback: reload users and try again
-              await loadUsers();
-              const u2 = (window.__usersCache || []).find(u => Number(u.id) === fromId) || (window.__usersCache || []).find(u => Number(u.id) === toId);
-              if (u2) await selectUser(u2);
-            }
-          });
+          window.__adminPushMatchToUser.set(Number(matchId), Number(fromId));
+          const prev = adminUnreadGetEntry({ id: fromId });
+          if (!prev || Number(prev.mid) !== Number(matchId)) adminUnreadSetEntry(fromId, matchId, prev ? prev.srv : 0);
+          adminChatListLocalUnread.set(matchId, Math.min(99, (adminChatListLocalUnread.get(matchId) || 0) + 1));
+          bumpUserUnreadForTeam(fromId, toId || viewerId);
+          renderUsers(); // fallback (falls Karte noch nicht im DOM ist)
+          setTimeout(() => { void refreshAdminUnreadFromServer(); }, 250);
+        } catch {}
+      });
+
+      // App-like: Wenn wir als "Ich" (adminId) agieren, kommen normale message-Events über user_{id}.
+      // Damit erhöhen wir sofort den Badge (lokal) – ohne erst auf DB/Poll zu warten.
+      socket.on('message', async (payload) => {
+        try {
+          const msg = payload?.message ?? payload;
+          if (!msg) return;
+          const matchId = Number(payload?.matchId ?? msg.match_id ?? msg.matchId ?? 0);
+          if (!matchId) return;
+          const fromId = Number(payload?.fromUserId ?? msg.sender_id ?? 0);
+          const viewerId = adminId ? Number(adminId) : (actorId != null ? Number(actorId) : 0);
+          if (!viewerId) return;
+          const incoming = !!(fromId && fromId !== viewerId);
+          if (incoming) window.__adminLastRecipientByUser.set(Number(fromId), Number(viewerId));
+
+          // Wenn Chat gerade offen ist: aktualisieren, aber nicht als "ungelesen" zählen.
+          if (activeMatchId && Number(activeMatchId) === matchId && document.visibilityState === 'visible') {
+            await loadConversation(true);
+            return;
+          }
+          if (incoming) {
+            window.__adminPushMatchToUser.set(Number(matchId), Number(fromId));
+            const prev = adminUnreadGetEntry({ id: fromId });
+            if (!prev || Number(prev.mid) !== Number(matchId)) adminUnreadSetEntry(fromId, matchId, prev ? prev.srv : 0);
+            adminChatListLocalUnread.set(matchId, Math.min(99, (adminChatListLocalUnread.get(matchId) || 0) + 1));
+            bumpUserUnreadForTeam(fromId, viewerId);
+            bumpTeamUnread(viewerId);
+            renderUsers(); // fallback
+          }
+          // Server-Werte regelmäßig nachziehen (falls Browser-Reload/mehrere Tabs)
+          void refreshAdminUnreadFromServer();
         } catch {}
       });
     }
@@ -186,42 +838,162 @@
       const t = document.getElementById('token').value.trim();
       if (!t) {
         setStatus('Bitte Token einfügen (hf_token)');
-        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">Kein Token gesetzt.<br><br>Öffne zuerst die normale Seite, logge dich ein und öffne dann <code>admin.html</code> erneut (Token wird automatisch übernommen), oder füge <code>hf_token</code> manuell ein.</div>`;
+        const hint = `<div style="opacity:.75;font-size:13px;padding:10px">Kein Token gesetzt.<br><br>Öffne zuerst die normale Seite, logge dich ein und öffne dann <code>admin.html</code> erneut (Token wird automatisch übernommen), oder füge <code>hf_token</code> manuell ein.</div>`;
+        document.getElementById('users').innerHTML = hint;
+        document.getElementById('teamList').innerHTML = hint;
         return;
       }
 
       setStatus('Prüfe Admin-Recht…');
       // Admin-Info laden (damit Socket im Admin-Room landet)
       try {
-        const rMe = await fetch(`${API}/admin/me`, { headers: authHeaders() });
+        const rMe = await fetch(`${apiBase()}/admin/me`, { headers: authHeaders() });
         const me = await rMe.json().catch(() => ({}));
         if (!rMe.ok) {
           const msg = (me && me.message) ? me.message : `Fehler (${rMe.status})`;
           setStatus(msg);
-          document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Fix: Starte den Server mit <code>ADMIN_USER_ID</code> (deine User-ID) oder setze bei deinem User <code>is_admin=1</code>.</div>`;
+          const box = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Fix: Starte den Server mit <code>ADMIN_USER_ID</code> (deine User-ID) oder setze bei deinem User <code>is_admin=1</code>.</div>`;
+          document.getElementById('users').innerHTML = box;
+          document.getElementById('teamList').innerHTML = box;
           return;
         }
         adminId = me?.user?.id || null;
+        window.__adminMeUser = me?.user || null;
       } catch (e) {
         setStatus('API nicht erreichbar');
-        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">API nicht erreichbar.<br><br>Öffne <code>admin.html</code> über die gleiche Domain wie die App (nicht als <code>file://</code>).</div>`;
+        const box = `<div style="opacity:.75;font-size:13px;padding:10px">API nicht erreichbar.<br><br>Aktuell konfiguriert: <code>${esc(apiBase())}</code><br><br>Öffne die Admin-Seite über dieselbe Adresse wie der Server, z. B. <code>http://localhost:DEIN_PORT/admin</code> (PORT aus <code>.env</code>). Bei file://: <code>localStorage.setItem('hf_api','http://localhost:3004')</code> (ohne /api).</div>`;
+        document.getElementById('users').innerHTML = box;
+        document.getElementById('teamList').innerHTML = box;
         return;
       }
+      // Socket lib vom API-Origin laden, dann verbinden
+      const okLib = await ensureSocketLib();
+      if (!okLib) showToast('Live', `Socket.io konnte nicht geladen werden von ${apiOrigin()}`);
       ensureSocket();
+
       setStatus('Lade Profile…');
-      const res = await fetch(`${API}/admin/users`, { headers: authHeaders() });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = (data && data.message) ? data.message : `Fehler (${res.status})`;
+      const [resUsers, resTeam] = await Promise.all([
+        fetch(`${apiBase()}/admin/users?kind=users`, { headers: authHeaders() }),
+        fetch(`${apiBase()}/admin/users?kind=team`, { headers: authHeaders() }),
+      ]);
+      const dataUsers = await resUsers.json().catch(() => ({}));
+      const dataTeam = await resTeam.json().catch(() => ([]));
+      if (!resUsers.ok || !resTeam.ok) {
+        const bad = !resUsers.ok ? dataUsers : dataTeam;
+        const st = !resUsers.ok ? resUsers.status : resTeam.status;
+        const msg = (bad && bad.message) ? bad.message : `Fehler (${st})`;
         setStatus(msg);
-        document.getElementById('users').innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Hinweis: Du brauchst Admin-Rechte (ENV <code>ADMIN_USER_ID</code> oder <code>is_admin=1</code>) und einen gültigen <code>hf_token</code>.</div>`;
+        const box = `<div style="opacity:.75;font-size:13px;padding:10px">${esc(msg)}<br><br>Hinweis: Du brauchst Admin-Rechte (ENV <code>ADMIN_USER_ID</code> oder <code>is_admin=1</code>) und einen gültigen <code>hf_token</code>.</div>`;
+        document.getElementById('users').innerHTML = box;
+        document.getElementById('teamList').innerHTML = box;
         return;
       }
-      window.__usersCache = Array.isArray(data) ? data : [];
-      const filter = document.getElementById('filterManaged').value;
-      const q = document.getElementById('q').value.trim().toLowerCase();
-      const list = window.__usersCache.filter(u => {
-        if (filter === 'managed' && !u.is_managed) return false;
+      window.__usersCache = Array.isArray(dataUsers) ? dataUsers : [];
+      window.__teamCache = Array.isArray(dataTeam) ? dataTeam : [];
+      // "Senden als ich" hinzufügen, falls nicht bereits in Team-Liste
+      try {
+        const meU = window.__adminMeUser;
+        if (meU && meU.id) {
+          const exists = window.__teamCache.some(x => Number(x.id) === Number(meU.id));
+          if (!exists) {
+            window.__teamCache.unshift({
+              id: meU.id,
+              name: `${meU.name || 'Ich'} (Ich)`,
+              city: '',
+              age: null,
+              coins: meU.coins ?? 0,
+              photo: '',
+              is_managed: 0,
+              account_type: 'self'
+            });
+          }
+        }
+      } catch {}
+      ensureActorIdFromTeamCache();
+
+      renderTeam();
+      renderUsers();
+      if (adminUnreadPollTimer) clearInterval(adminUnreadPollTimer);
+      adminUnreadPollTimer = setInterval(() => { void refreshAdminUnreadFromServer(); }, 3500);
+      if (adminAllTeamUnreadPollTimer) clearInterval(adminAllTeamUnreadPollTimer);
+      adminAllTeamUnreadPollTimer = setInterval(() => { void refreshAllTeamUnreadFromServer(); }, 6000);
+      const unreadErr = await refreshAdminUnreadFromServer();
+      void refreshAllTeamUnreadFromServer();
+      const base = `Team: ${window.__teamCache.length} · Nutzer: ${window.__usersCache.length}`;
+      const uHint = Number(window.__adminChatsMitUngelesen || 0) > 0
+        ? ` · ${window.__adminChatsMitUngelesen} Chat(s) mit Ungelesenen`
+        : ' · keine ungelesenen Team-Chats (Zähler aktiv)';
+      setStatus(unreadErr ? `${base} · ${unreadErr}` : `${base}${uHint}`);
+      updateAdminComposerLock();
+    }
+
+    function renderTeam() {
+      ensureActorIdFromTeamCache();
+      const q = document.getElementById('qTeam').value.trim().toLowerCase();
+      const list = (window.__teamCache || []).filter(a => {
+        if (!q) return true;
+        const hay = `${a.id} ${a.name||''}`.toLowerCase();
+        return hay.includes(q);
+      });
+      const wrap = document.getElementById('teamList');
+      wrap.innerHTML = '';
+      list.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'cardUser' + (actorId && Number(actorId) === Number(a.id) ? ' active' : '');
+        div.dataset.teamId = String(a.id);
+        const tid = Number(a.id);
+        const tUn = Math.min(99, Math.max(
+          0,
+          Number(adminLocalUnreadByTeam.get(tid) || 0),
+          Number(adminSrvUnreadByTeam.get(tid) || 0),
+        ));
+        const tLab = tUn > 9 ? '9+' : String(Math.max(0, tUn));
+        const tBadge = tUn > 0
+          ? `<span class="chat-unread-near-name" aria-label="${tUn} ungelesen">${tLab}</span>`
+          : '';
+        div.innerHTML = `
+          ${listAvatarHtml(a.photo, a.name)}
+          <div class="uInfo">
+            <div class="chat-item-name-row">
+              <div class="uName">${esc(a.name)} <span class="pill managed">Team</span></div>
+              ${tBadge}
+            </div>
+            <div class="uMeta">${esc(a.city || '')}${a.age ? ` · ${esc(a.age)}` : ''} · Coins: ${a.coins ?? 0}</div>
+          </div>
+          <div class="uActions">
+            <button class="secondary" data-del="1">Löschen</button>
+          </div>
+        `;
+        div.onclick = async (e) => {
+          if (e?.target?.dataset?.del) return;
+          actorId = Number(a.id);
+          adminChatListLocalUnread.clear();
+          setEditTarget(a);
+          renderTeam();
+          if (activeUser) await loadConversation();
+          await refreshAdminUnreadFromServer();
+        };
+        div.querySelector('button[data-del="1"]').onclick = async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (!confirm(`Profil wirklich löschen?\n\n${a.name} (#${a.id})`)) return;
+          const r = await fetch(`${apiBase()}/admin/users/${a.id}`, { method: 'DELETE', headers: authHeaders() });
+          const out = await r.json().catch(() => ({}));
+          if (!r.ok) { setStatus(out?.message || 'Fehler'); return; }
+          if (Number(actorId) === Number(a.id)) actorId = null;
+          if (editTarget?.id === a.id) editTarget = null;
+          await loadUsers();
+          setStatus('Gelöscht ✓');
+        };
+        wrap.appendChild(div);
+      });
+      if (!list.length) {
+        wrap.innerHTML = '<div style="opacity:.65;font-size:13px;padding:10px">Keine Team-/Seed-Profile (oder Suche leert die Liste).</div>';
+      }
+    }
+
+    function renderUsers() {
+      const q = document.getElementById('qUser').value.trim().toLowerCase();
+      const list = (window.__usersCache || []).filter(u => {
         if (!q) return true;
         const hay = `${u.id} ${u.name||''} ${u.city||''}`.toLowerCase();
         return hay.includes(q);
@@ -230,16 +1002,42 @@
       wrap.innerHTML = '';
       list.forEach(u => {
         const div = document.createElement('div');
-        div.className = 'user' + (activeUser?.id === u.id ? ' active' : '');
+        div.className = 'cardUser' + (activeUser?.id === u.id ? ' active' : '');
+        div.dataset.userId = String(u.id);
+        const managed = u.is_managed ? `<span class="pill managed">Team</span>` : '';
+        const premium = u.is_premium ? `<span class="pill">Premium</span>` : '';
+        const un = adminUnreadForUserCard(u);
+        const unLab = un > 9 ? '9+' : String(Math.max(0, un));
+        const unreadNearName = un > 0
+          ? `<span class="chat-unread-near-name" aria-label="${un} ungelesen">${unLab}</span>`
+          : '';
+        const metaCity = u.city ? `${esc(u.city)}` : '';
+        const metaAge = u.age ? `${esc(u.age)}` : '';
+        const metaMid = [metaCity, metaAge].filter(Boolean).join(' · ');
+        const uidN = Number(u.id);
+        const teams = unreadTeamsForUser(uidN);
+        // Wenn wir keine Live-Zuordnung haben, nimm die "best guess" TeamId aus Unreads
+        const last = Number(window.__adminLastRecipientByUser.get(uidN) || 0);
+        const picked = teams.length ? (teams.includes(last) ? last : teams[0]) : last;
+        if (picked) window.__adminLastRecipientByUser.set(uidN, picked);
+        const rec = picked
+          ? ((window.__teamCache || []).find(t => Number(t.id) === Number(picked))?.name || `Team #${picked}`)
+          : '';
+        const moreTxt = teams.length > 1 ? ` +${teams.length - 1}` : '';
+        const recTxt = rec ? ` · → ${esc(rec)}${moreTxt}` : (teams.length > 1 ? ` · → ${teams.length} Accounts` : '');
+        const uMetaLine = `#${u.id}${metaMid ? ` · ${metaMid}` : ''} · Coins: ${u.coins ?? 0}${u.is_online ? ' · ● online' : ''}${recTxt}`;
         div.innerHTML = `
-          <div class="top">
-            <div class="name">${esc(u.name)} <span style="opacity:.6;font-weight:600">#${u.id}</span></div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <div style="font-size:11px;color:rgba(233,232,243,.6)">${u.is_online ? '● online' : ''}</div>
-              <button class="secondary" data-del="1" style="padding:7px 10px;border-radius:10px;font-size:12px">Löschen</button>
+          ${listAvatarHtml(u.photo, u.name)}
+          <div class="uInfo">
+            <div class="chat-item-name-row">
+              <h4>${esc(u.name)}${managed}${premium}</h4>
+              ${unreadNearName}
             </div>
+            <div class="uMeta">${uMetaLine}</div>
           </div>
-          <div class="meta">${esc(u.city || '')} · Coins: ${u.coins ?? 0} · Premium: ${u.is_premium ? (u.premium_tier||'ja') : 'nein'} · Betreut: ${u.is_managed ? 'ja' : 'nein'}</div>
+          <div class="uActions">
+            <button class="secondary" data-del="1">Löschen</button>
+          </div>
         `;
         div.onclick = (e) => {
           if (e?.target?.dataset?.del) return;
@@ -248,43 +1046,152 @@
         div.querySelector('button[data-del="1"]').onclick = async (e) => {
           e.preventDefault(); e.stopPropagation();
           if (!confirm(`Profil wirklich löschen?\n\n${u.name} (#${u.id})`)) return;
-          const r = await fetch(`${API}/admin/users/${u.id}`, { method: 'DELETE', headers: authHeaders() });
+          const r = await fetch(`${apiBase()}/admin/users/${u.id}`, { method: 'DELETE', headers: authHeaders() });
           const out = await r.json().catch(() => ({}));
           if (!r.ok) { setStatus(out?.message || 'Fehler'); return; }
-          if (activeUser?.id === u.id) { activeUser = null; activeMatchId = null; document.getElementById('msgs').innerHTML=''; }
+          const mc = window.__adminMatchesCache || [];
+          const row = mc.find(x => Number(x.user_id) === Number(u.id));
+          if (row && matchRowIdAdmin(row)) adminChatListLocalUnread.delete(matchRowIdAdmin(row));
+          if (activeUser?.id === u.id) {
+            activeUser = null; activeMatchId = null;
+            document.getElementById('msgs').innerHTML='';
+            window.__adminLastLoadedMsgSig = null;
+            stopAdminChatPoll();
+          }
+          if (editTarget?.id === u.id) editTarget = null;
           await loadUsers();
           setStatus('Gelöscht ✓');
         };
         wrap.appendChild(div);
       });
       if (!list.length) {
-        wrap.innerHTML = `<div style="opacity:.75;font-size:13px;padding:10px">0 Profile gefunden.<br><br>Wenn du sicher bist, dass Nutzer existieren: prüfe, ob du auf der richtigen Datenbank bist (Render vs lokal) und ob du <code>admin.html</code> über die Server-URL öffnest.</div>`;
+        wrap.innerHTML = '<div style="opacity:.65;font-size:13px;padding:10px">Keine Nutzer (oder Suche leert die Liste).</div>';
       }
-      setStatus(`Profile: ${list.length}`);
     }
 
     async function selectUser(u) {
       activeUser = u;
       activeMatchId = null;
-      document.getElementById('chatTitle').textContent = `${u.name} (#${u.id})`;
+      document.getElementById('chatTitle').textContent = `${u.name}`;
       document.getElementById('chatSub').textContent = `${u.city || ''} · Coins: ${u.coins ?? 0} · Betreut: ${u.is_managed ? 'ja' : 'nein'}`;
       document.querySelectorAll('.user').forEach(x => x.classList.remove('active'));
-      // Editbox hydraten
-      document.getElementById('eName').value = u.name || '';
-      document.getElementById('eAge').value = u.age ?? '';
-      document.getElementById('eCity').value = u.city || '';
-      document.getElementById('eCoins').value = u.coins ?? 0;
-      document.getElementById('ePhoto').value = u.photo || '';
-      document.getElementById('ePremium').value = u.is_premium ? '1' : '0';
-      document.getElementById('eTier').value = u.premium_tier || '';
-      document.getElementById('eBio').value = u.bio || '';
-      document.getElementById('eInterests').value = Array.isArray(u.interests) ? u.interests.join(', ') : '';
+      setEditTarget(u);
       await loadConversation();
+      // Sobald wir den Chat explizit öffnen, gilt er als "gesehen" im UI.
+      try {
+        const uid = Number(u.id);
+        const teamId = Number(actorId || adminId || 0);
+        if (uid && teamId) clearUnreadForUserTeam(uid, teamId, activeMatchId);
+      } catch {}
       await loadUsers();
     }
 
+    function setEditTarget(u) {
+      editTarget = u || null;
+      if (!editTarget) return;
+      document.getElementById('eName').value = editTarget.name || '';
+      document.getElementById('eAge').value = editTarget.age ?? '';
+      document.getElementById('eCity').value = editTarget.city || '';
+      document.getElementById('eCoins').value = editTarget.coins ?? 0;
+      document.getElementById('ePhoto').value = editTarget.photo || '';
+      document.getElementById('ePremium').value = editTarget.is_premium ? '1' : '0';
+      document.getElementById('eTier').value = editTarget.premium_tier || '';
+      document.getElementById('eBio').value = editTarget.bio || '';
+      document.getElementById('eInterests').value = Array.isArray(editTarget.interests) ? editTarget.interests.join(', ') : '';
+      // Kopf aktualisieren, wenn wir gerade kein aktives Chat-Target haben
+      if (!activeUser || Number(activeUser.id) !== Number(editTarget.id)) {
+        document.getElementById('chatTitle').textContent = `${editTarget.name}`;
+        document.getElementById('chatSub').textContent = `${editTarget.city || ''} · Coins: ${editTarget.coins ?? 0} · Betreut: ${editTarget.is_managed ? 'ja' : 'nein'}`;
+      }
+
+      // Fotos laden (mehrere Bilder)
+      loadEditPhotos().catch(() => {});
+    }
+
+    async function loadEditPhotos() {
+      const wrap = document.getElementById('photoThumbs');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      if (!editTarget?.id) return;
+      const r = await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos`, { headers: authHeaders() });
+      const photos = await r.json().catch(() => ([]));
+      if (!r.ok) {
+        wrap.innerHTML = `<div style="opacity:.65;font-size:12px">${esc(photos?.message || 'Fehler')}</div>`;
+        return;
+      }
+      if (!Array.isArray(photos) || photos.length === 0) {
+        wrap.innerHTML = `<div style="opacity:.65;font-size:12px">Noch keine Bilder.</div>`;
+        return;
+      }
+      photos.forEach(p => {
+        const w = document.createElement('div');
+        w.className = 'thumbWrap';
+
+        const img = document.createElement('img');
+        img.className = 'photoThumb' + (Number(p.is_primary || 0) === 1 ? ' primary' : '');
+        img.src = p.url;
+        img.title = Number(p.is_primary || 0) === 1 ? 'Hauptbild (klicken = bleibt Hauptbild)' : 'Klicken = als Hauptbild setzen';
+        img.onclick = async () => {
+          if (Number(p.is_primary || 0) === 1) return;
+          await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos/${p.id}/primary`, { method: 'POST', headers: authHeaders() });
+          await loadUsers();
+          await loadEditPhotos();
+        };
+
+        const del = document.createElement('button');
+        del.className = 'thumbDel';
+        del.type = 'button';
+        del.textContent = '✕';
+        del.title = 'Bild löschen';
+        del.onclick = async (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (!confirm('Bild löschen?')) return;
+          await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos/${p.id}`, { method: 'DELETE', headers: authHeaders() });
+          await loadUsers();
+          await loadEditPhotos();
+        };
+
+        w.appendChild(img);
+        w.appendChild(del);
+        wrap.appendChild(w);
+      });
+    }
+
+    async function addPhotoForEditTarget() {
+      if (!editTarget?.id) return;
+      const f = document.getElementById('photoFile')?.files?.[0];
+      if (!f) return showToast('Fehlt noch', 'Bitte eine Bilddatei auswählen.');
+      const fd = new FormData();
+      fd.append('photo', f);
+      const r = await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${document.getElementById('token').value.trim()}` },
+        body: fd
+      });
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) return showToast('Upload fehlgeschlagen', out?.message || `Fehler (${r.status})`);
+      document.getElementById('photoFile').value = '';
+      await loadUsers();
+      await loadEditPhotos();
+      setStatus('Bild hinzugefügt ✓');
+    }
+
+    async function deleteAllPhotosForEditTarget() {
+      if (!editTarget?.id) return;
+      if (!confirm('Wirklich alle Bilder dieses Profils löschen?')) return;
+      const r = await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos`, { headers: authHeaders() });
+      const photos = await r.json().catch(() => ([]));
+      if (!r.ok || !Array.isArray(photos)) return showToast('Fehler', photos?.message || 'Konnte Bilder nicht laden');
+      for (const p of photos) {
+        try { await fetch(`${apiBase()}/admin/users/${editTarget.id}/photos/${p.id}`, { method: 'DELETE', headers: authHeaders() }); } catch {}
+      }
+      await loadUsers();
+      await loadEditPhotos();
+      setStatus('Alle Bilder gelöscht ✓');
+    }
+
     async function applyEdits() {
-      if (!activeUser) return;
+      if (!editTarget?.id) return;
       const interests = document.getElementById('eInterests').value
         .split(',')
         .map(s => s.trim())
@@ -300,7 +1207,7 @@
         interests,
         bio: document.getElementById('eBio').value,
       };
-      const res = await fetch(`${API}/admin/users/${activeUser.id}`, {
+      const res = await fetch(`${apiBase()}/admin/users/${editTarget.id}`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify(payload)
@@ -308,95 +1215,420 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
       // Cache aktualisieren
-      Object.assign(activeUser, data.user || {});
+      Object.assign(editTarget, data.user || {});
       await loadUsers();
       setStatus('Gespeichert ✓');
     }
 
     async function toggleManaged() {
-      if (!activeUser) return;
-      const managed = !activeUser.is_managed;
-      const res = await fetch(`${API}/admin/users/${activeUser.id}/managed`, {
+      if (!editTarget?.id) return;
+      const managed = !editTarget.is_managed;
+      const res = await fetch(`${apiBase()}/admin/users/${editTarget.id}/managed`, {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ managed })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
-      activeUser.is_managed = managed ? 1 : 0;
+      editTarget.is_managed = managed ? 1 : 0;
+      // wenn wir ein "unser Profil" verwalten, synchron in Cache
+      if (window.__teamCache && editTarget) {
+        const t = window.__teamCache.find(x => Number(x.id) === Number(editTarget.id));
+        if (t) t.is_managed = editTarget.is_managed;
+      }
       await loadUsers();
-      await selectUser(activeUser);
+      setEditTarget(editTarget);
     }
 
-    async function loadConversation() {
-      if (!activeUser) return;
-      setStatus('Lade Chat…');
-      const res = await fetch(`${API}/admin/matches/${activeUser.id}`, { headers: authHeaders() });
-      const matches = await res.json().catch(() => ([]));
-      if (!res.ok) { setStatus(matches?.message || 'Fehler'); return; }
+    function updateAdminComposerLock() {
+      const locked = !actorId || !activeUser || !activeMatchId;
+      const text = document.getElementById('text');
+      const send = document.getElementById('send');
+      const img = document.getElementById('adminChatImage');
+      const composer = document.getElementById('adminComposer');
+      const lockHint = document.getElementById('composerLockHint');
+      const showUnlockHint = locked && actorId && activeUser;
+      if (composer) {
+        composer.style.display = locked ? 'none' : '';
+        composer.setAttribute('aria-hidden', locked ? 'true' : 'false');
+      }
+      if (lockHint) {
+        lockHint.style.display = showUnlockHint ? 'block' : 'none';
+        if (showUnlockHint) {
+          lockHint.textContent =
+            'Kein Match mit diesem Nutzer. Klicke oben auf „Matchen“ – erst danach erscheint das Match in der App und hier das Eingabefeld. Nachrichten legen kein Match an.';
+        }
+      }
+      if (text) {
+        text.disabled = locked;
+        text.placeholder = locked ? 'Zuerst „Matchen“…' : 'Nachricht…';
+      }
+      if (send) send.disabled = locked;
+      if (img) img.disabled = locked;
+    }
 
-      const my = matches.find(m => Number(m.user_id) === Number(activeUser.id));
-      activeMatchId = my?.match_id || null;
+    /** Liest Match Team↔Nutzer vom Server (kein Match durch Schreiben!) */
+    async function refreshActiveMatchFromServer() {
+      activeMatchId = null;
+      if (!actorId || !activeUser) {
+        updateAdminComposerLock();
+        return false;
+      }
+      try {
+        const res = await fetch(`${apiBase()}/admin/as/${actorId}/matches`, { headers: authHeaders() });
+        const matches = await res.json().catch(() => ([]));
+        if (!res.ok) {
+          updateAdminComposerLock();
+          return false;
+        }
+        const my = matches.find(m => Number(m.user_id) === Number(activeUser.id));
+        activeMatchId = my?.match_id || null;
+        updateAdminComposerLock();
+        return !!activeMatchId;
+      } catch {
+        updateAdminComposerLock();
+        return false;
+      }
+    }
 
+    async function loadConversation(silent) {
+      if (!activeUser) {
+        stopAdminChatPoll();
+        updateAdminComposerLock();
+        return;
+      }
+      if (!silent) setStatus('Lade Chat…');
+      if (!actorId) {
+        setStatus('Bitte "Senden als" Team-Profil wählen');
+        stopAdminChatPoll();
+        updateAdminComposerLock();
+        return;
+      }
+      const hasMatch = await refreshActiveMatchFromServer();
       const msgsEl = document.getElementById('msgs');
-      msgsEl.innerHTML = '';
-      if (!activeMatchId) {
-        msgsEl.innerHTML = `<div style="opacity:.7;font-size:13px">Noch kein Chat. Schreib einfach eine Nachricht – Match wird erstellt.</div>`;
-        setStatus('Bereit');
+      if (!hasMatch) {
+        msgsEl.innerHTML = `<div style="opacity:.7;font-size:13px">Noch kein Match mit diesem Nutzer.<br><br>Bitte zuerst <strong>„Matchen“</strong> klicken – erst dann erscheint das Match in der App und du kannst hier schreiben.</div>`;
+        if (!silent) setStatus('Bereit – zuerst „Matchen“');
+        stopAdminChatPoll();
+        window.__adminLastLoadedMsgSig = null;
+        updateAdminComposerLock();
         return;
       }
 
-      const r2 = await fetch(`${API}/admin/messages/${activeMatchId}`, { headers: authHeaders() });
+      const r2 = await fetch(`${apiBase()}/admin/as/${actorId}/messages/${activeMatchId}`, { headers: authHeaders() });
       const msgs = await r2.json().catch(() => ([]));
-      if (!r2.ok) { setStatus(msgs?.message || 'Fehler'); return; }
+      if (!r2.ok) {
+        if (!silent) setStatus(msgs?.message || 'Fehler');
+        updateAdminComposerLock();
+        return;
+      }
 
+      const last = msgs.length ? msgs[msgs.length - 1] : null;
+      const msgSig = last ? `${msgs.length}:${last.id}` : '0';
+      const fullSig = `${actorId}:${activeUser.id}:${activeMatchId}:${msgSig}`;
+      if (silent && fullSig === window.__adminLastLoadedMsgSig && msgsEl.querySelector('.msg')) {
+        updateAdminComposerLock();
+        return;
+      }
+      window.__adminLastLoadedMsgSig = fullSig;
+
+      msgsEl.innerHTML = '';
       msgs.forEach(m => {
         const div = document.createElement('div');
-        div.className = 'msg ' + (Number(m.sender_id) === Number(activeUser.id) ? '' : 'me');
-        div.innerHTML = `<div class="bubble">${esc(m.text)}</div><div class="time">${esc(fmt(m.created_at))}</div>`;
+        div.className = 'msg ' + (Number(m.sender_id) === Number(actorId) ? 'me' : '');
+        const imgUrl = String(m.image_url || '').trim();
+        const fullImg = imgUrl ? (apiOrigin() + imgUrl) : '';
+        const imgHtml = fullImg
+          ? `<a href="${esc(fullImg)}" target="_blank" rel="noopener"><img src="${esc(fullImg)}" alt="" style="max-width:220px;max-height:220px;border-radius:12px;display:block" /></a>`
+          : '';
+        const txt = String(m.text || '').trim();
+        const showTxt = txt && txt !== '📷 Bild';
+        const txtHtml = showTxt ? `<div style="margin-top:${imgUrl ? '8px' : '0'}">${esc(txt)}</div>` : '';
+        const bubbleOnlyText = !imgUrl && txt ? esc(txt) : '';
+        div.innerHTML = `<div class="bubble">${imgHtml}${txtHtml || bubbleOnlyText}</div><div class="time">${esc(fmt(m.created_at))}</div>`;
         msgsEl.appendChild(div);
       });
       msgsEl.scrollTop = msgsEl.scrollHeight;
-      setStatus('Bereit');
+      // Wie App: "gelesen" nur beim aktiven Öffnen, nicht bei stillem Polling.
+      if (!silent) {
+        try {
+          await fetch(`${apiBase()}/admin/as/${actorId}/messages/${activeMatchId}/read`, {
+            method: 'POST',
+            headers: authHeaders()
+          });
+        } catch {}
+        // Badges sofort entfernen (nicht erst auf nächsten Poll warten)
+        clearUnreadForUserTeam(activeUser?.id, actorId, activeMatchId);
+        await refreshAdminUnreadFromServer();
+      }
+      if (!silent) setStatus('Bereit');
+      updateAdminComposerLock();
+      restartAdminChatPoll();
     }
 
     async function sendAdminMessage() {
       if (!activeUser) return;
+      if (!actorId) {
+        showToast('Fehlt noch', 'Bitte oben ein "Senden als… (Team‑Profil)" auswählen (oder erst ein Profil auf "Betreut an/aus" stellen).');
+        return setStatus('Bitte "Senden als" Team-Profil wählen');
+      }
       const text = document.getElementById('text').value.trim();
       if (!text) return;
+
+      await refreshActiveMatchFromServer();
+      if (!activeMatchId) {
+        showToast('Zuerst „Matchen“', 'Ohne Match keine Nachricht. Bitte den Button „Matchen“ klicken – erst dann sieht der Nutzer das Match in der App.');
+        return;
+      }
       document.getElementById('text').value = '';
 
-      const res = await fetch(`${API}/admin/message`, {
+      const res = await fetch(`${apiBase()}/admin/as/${actorId}/message`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ userId: activeUser.id, text })
+        body: JSON.stringify({ toUserId: activeUser.id, text })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setStatus(data?.message || 'Fehler'); return; }
+      if (!res.ok) {
+        const msg = data?.message || `Fehler (${res.status})`;
+        setStatus(msg);
+        showToast('Senden fehlgeschlagen', msg);
+        return;
+      }
       activeMatchId = data.matchId || activeMatchId;
       await loadConversation();
     }
 
+    async function adminCreateMatch() {
+      if (!activeUser) {
+        showToast('Nutzer fehlt', 'Bitte zuerst unter „Nutzer“ jemanden anklicken.');
+        return;
+      }
+      if (!actorId) {
+        showToast('Team-Profil fehlt', 'Bitte links unter „Unsere Profile“ ein Profil anklicken (Senden als).');
+        return;
+      }
+      const res = await fetch(`${apiBase()}/admin/as/${actorId}/match`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ userId: activeUser.id })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast('Matchen fehlgeschlagen', data?.message || `Fehler (${res.status})`);
+        return;
+      }
+      activeMatchId = data.matchId || activeMatchId;
+      setStatus(`Match erstellt · Match-ID ${data.matchId}`);
+      await loadConversation();
+    }
+
+    async function sendAdminImage() {
+      if (!activeUser) return;
+      if (!actorId) {
+        showToast('Fehlt noch', 'Bitte zuerst ein Team-Profil (Senden als) wählen.');
+        return;
+      }
+      const f = document.getElementById('adminChatImage')?.files?.[0];
+      if (!f) return;
+
+      await refreshActiveMatchFromServer();
+      if (!activeMatchId) {
+        showToast('Zuerst „Matchen“', 'Bitte zuerst „Matchen“ klicken, bevor du ein Bild sendest.');
+        document.getElementById('adminChatImage').value = '';
+        return;
+      }
+      document.getElementById('adminChatImage').value = '';
+      const fd = new FormData();
+      fd.append('toUserId', String(activeUser.id));
+      fd.append('image', f);
+      const res = await fetch(`${apiBase()}/admin/as/${actorId}/message/image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${document.getElementById('token').value.trim()}` },
+        body: fd
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.message || `Fehler (${res.status})`;
+        setStatus(msg);
+        showToast('Bild senden fehlgeschlagen', msg);
+        return;
+      }
+      activeMatchId = data.matchId || activeMatchId;
+      await loadConversation();
+      setStatus('Bild gesendet ✓');
+    }
+
+    async function createUserAccount() {
+      const name = document.getElementById('newName').value.trim();
+      const age = document.getElementById('newAge').value;
+      const city = document.getElementById('newCity').value.trim();
+      const coins = document.getElementById('newCoins').value;
+      if (!name) {
+        setStatus('Name ausfüllen');
+        showToast('Fehlt etwas', 'Bitte einen Namen angeben.');
+        return;
+      }
+      setStatus('Erstelle Team-Profil…');
+      const url = apiEndpoint('/admin/team-profile');
+      let res = await fetch(url, {
+        method: 'POST',
+        headers: authHeaders(),
+        cache: 'no-store',
+        body: JSON.stringify({
+          name,
+          kind: 'team',
+          age: age === '' ? 25 : Number(age),
+          city,
+          coins: coins === '' ? 0 : Number(coins),
+        })
+      });
+      if (res.status === 404 && window.location.protocol.startsWith('http')) {
+        const fallback = new URL('/api/admin/team-profile', window.location.origin).href;
+        if (fallback !== url) {
+          res = await fetch(fallback, {
+            method: 'POST',
+            headers: authHeaders(),
+            cache: 'no-store',
+            body: JSON.stringify({
+              name,
+              kind: 'team',
+              age: age === '' ? 25 : Number(age),
+              city,
+              coins: coins === '' ? 0 : Number(coins),
+            })
+          });
+        }
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        let msg = data?.message || '';
+        if (res.status === 404) {
+          msg =
+            `404 unter ${url} · Auf diesem Port läuft oft ein alter node-Prozess: PowerShell netstat -ano | findstr :PORT, dann taskkill /PID … /F. Neu starten im Projektordner: node server.js. Test: GET ${apiOrigin()}/api/admin/team-profile muss JSON liefern (ok:true). Admin nur über http://localhost:PORT/admin öffnen.`;
+        }
+        setStatus(msg || `Fehler (${res.status})`);
+        showToast('Erstellen fehlgeschlagen', msg || `HTTP ${res.status}`);
+        return;
+      }
+      const loginId = data.user?.email || '';
+      const oncePw = data.initialPassword ? ` · Passwort (einmal): ${data.initialPassword}` : '';
+      setStatus(`Team-Profil #${data.user?.id} · Login: ${loginId}${oncePw}`);
+      showToast(
+        'Team-Profil angelegt',
+        `Login: ${loginId}${data.initialPassword ? ` · Passwort: ${data.initialPassword}` : ''}`
+      );
+      await loadUsers();
+      const uid = Number(data.user?.id);
+      const u =
+        (window.__teamCache || []).find(x => Number(x.id) === uid) ||
+        (window.__usersCache || []).find(x => Number(x.id) === uid);
+      if (u) {
+        actorId = Number(u.id);
+        setEditTarget(u);
+        renderTeam();
+      }
+    }
+
+    function openCreatePanel() {
+      const p = document.getElementById('createUserPanel');
+      const t = document.getElementById('createUserToggle');
+      if (p) p.classList.add('open');
+      if (t) t.setAttribute('aria-expanded', 'true');
+      if (p) p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => document.getElementById('newName')?.focus(), 200);
+    }
+    document.getElementById('createUserToggle').onclick = () => {
+      const p = document.getElementById('createUserPanel');
+      const t = document.getElementById('createUserToggle');
+      if (!p) return;
+      const on = p.classList.toggle('open');
+      if (t) t.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on) setTimeout(() => document.getElementById('newName')?.focus(), 80);
+    };
+    document.getElementById('btnCreateUser').onclick = createUserAccount;
+    document.getElementById('btnJumpCreate').onclick = openCreatePanel;
     document.getElementById('btnLoad').onclick = loadUsers;
+    document.getElementById('btnMatch').onclick = adminCreateMatch;
     document.getElementById('btnRefresh').onclick = loadConversation;
     document.getElementById('btnManaged').onclick = toggleManaged;
     document.getElementById('btnApply').onclick = applyEdits;
+    document.getElementById('btnAddPhoto').onclick = addPhotoForEditTarget;
+    document.getElementById('btnDelAllPhotos').onclick = deleteAllPhotosForEditTarget;
     document.getElementById('send').onclick = sendAdminMessage;
-    document.getElementById('filterManaged').onchange = loadUsers;
-    document.getElementById('q').addEventListener('input', () => {
-      clearTimeout(window.__qT);
-      window.__qT = setTimeout(loadUsers, 200);
+    document.getElementById('btnAdminImage').onclick = () => document.getElementById('adminChatImage').click();
+    document.getElementById('adminChatImage').onchange = () => sendAdminImage();
+    document.getElementById('qTeam').addEventListener('input', () => {
+      clearTimeout(window.__qT1);
+      window.__qT1 = setTimeout(() => renderTeam(), 150);
+    });
+    document.getElementById('qUser').addEventListener('input', () => {
+      clearTimeout(window.__qT2);
+      window.__qT2 = setTimeout(() => renderUsers(), 150);
     });
     document.getElementById('text').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMessage(); }
     });
 
-    // Auto-Token aus der normalen App übernehmen (wenn admin.html gleiche Domain hat)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        void refreshAdminUnreadFromServer();
+        requestAdminsRoom();
+      }
+    });
+    window.addEventListener('focus', () => {
+      void refreshAdminUnreadFromServer();
+      requestAdminsRoom();
+    });
+
+    // Debug: zeigt die aktuellen Unread-Daten (API + berechnete Badges)
+    const dbgBtn = document.getElementById('btnDebugUnread');
+    if (dbgBtn) {
+      const showDbg = (() => {
+        try { return new URLSearchParams(window.location.search).get('debug') === '1'; } catch { return false; }
+      })();
+      dbgBtn.style.display = showDbg ? '' : 'none';
+      dbgBtn.onclick = async () => {
+        try { await refreshAdminUnreadFromServer(); } catch {}
+        const dbg = window.__adminUnreadDebug || {};
+        const sampleMatches = (window.__adminMatchesCache || [])
+          .slice(0, 8)
+          .map(r => ({ user_id: r.user_id, match_id: r.match_id, unread_count: r.unread_count ?? r.unreadCount ?? 0 }));
+        const mapSample = [];
+        try {
+          let i = 0;
+          for (const [k, v] of (window.__adminUnreadByUser || new Map()).entries()) {
+            if (typeof k === 'number') { mapSample.push({ k, v }); i++; }
+            if (i >= 8) break;
+          }
+        } catch {}
+        alert(JSON.stringify({
+          apiBase: apiBase(),
+          adminId,
+          actorId,
+          unreadDebug: dbg,
+          matchesSample: sampleMatches,
+          unreadMapSample: mapSample,
+          chatsMitUngelesen: window.__adminChatsMitUngelesen || 0,
+        }, null, 2));
+      };
+    }
+
+    updateAdminComposerLock();
+
+    // Auto-Token aus der normalen App übernehmen und direkt laden
     try {
       const saved = localStorage.getItem('hf_token');
       const inp = document.getElementById('token');
       if (saved && inp && !inp.value) inp.value = saved;
-    } catch {}
+      // Wenn Token vorhanden: Profile automatisch laden
+      if (inp?.value?.trim()) {
+        setTimeout(() => loadUsers(), 150);
+      } else {
+        setStatus('Bitte Token einfügen (hf_token)');
+      }
+    } catch {
+      setStatus('Bitte Token einfügen (hf_token)');
+    }
   </script>
 </body>
 </html>

@@ -278,7 +278,6 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .card-info .card-bio { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 8px; line-height: 1.5; }
 .card-info .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .card-tag { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 3px 12px; font-size: 12px; }
-.card-tag.managed { background: rgba(209,163,87,0.18); border: 1px solid rgba(209,163,87,0.35); color: #f3d6a1; }
 
 .card-stamp {
   position: absolute;
@@ -332,6 +331,15 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 }
 .match-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .match-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+.match-card .match-card-photo-empty {
+  width: 100%; aspect-ratio: 3/4;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.profile-card .card-photo-empty {
+  width: 100%; height: 100%;
+  background: var(--bg2);
+}
 .match-card-info { padding: 12px; }
 .match-card-info h4 { font-family: var(--font-display); font-size: 17px; font-weight: 400; }
 .match-card-info p { color: var(--text2); font-size: 12px; }
@@ -371,17 +379,51 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   flex-shrink: 0;
   background: var(--bg3);
 }
-.chat-avatar-placeholder {
+/* Kein Platzhalter-Foto: nur neutraler Kreis, wenn kein Bild-URL */
+.chat-avatar-empty {
   width: 46px; height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--rose), var(--rose2));
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 600; font-size: 18px;
   flex-shrink: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
 .chat-item-info { flex: 1; min-width: 0; }
-.chat-item-info h4 { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-item-name-row h4 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-unread-near-name {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #e8607a;
+  color: #fff !important;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(232,96,122,0.35);
+  visibility: visible;
+  opacity: 1;
+}
 .chat-item-info p { color: var(--text2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
 .chat-window {
@@ -402,8 +444,16 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 .chat-header {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
   background: var(--bg2);
+}
+.chat-header-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.chat-empty-hint {
+  text-align: center;
+  color: var(--text3);
+  font-size: 14px;
+  padding: 40px 20px;
 }
 .chat-header h3 { font-size: 16px; font-weight: 500; }
 .chat-header p { font-size: 12px; color: var(--text2); }
@@ -495,6 +545,12 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   width: 100%; height: 100%;
   object-fit: cover;
 }
+.profile-photo-wrapper.no-photo img {
+  display: none;
+}
+.profile-photo-wrapper.no-photo {
+  background: var(--bg3);
+}
 .photo-overlay {
   position: absolute; inset: 0;
   background: rgba(0,0,0,0.5);
@@ -575,6 +631,18 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 }
 .mobile-nav button svg { width: 22px; height: 22px; fill: currentColor; }
 .mobile-nav button.active { color: var(--rose); }
+.mobile-nav .mobile-msg-badge {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  margin-left: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 5px; }
@@ -636,6 +704,9 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
         </div>
         <button class="btn-primary" onclick="handleLogin()">Anmelden</button>
         <p class="auth-switch">Noch kein Konto? <a onclick="showRegister()">Registrieren</a></p>
+        <p class="auth-switch" style="opacity:.85;margin-top:10px;font-size:12px">
+          Probleme lokal? <a onclick="setApiBase()">Server-Adresse setzen</a>
+        </p>
       </div>
 
       <!-- Register -->
@@ -685,11 +756,12 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
         <button class="nav-btn" data-page="matches" onclick="showPage('matches', this)">
           <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
           Matches
-          <span class="badge" id="matchBadge">3</span>
+          <span class="badge" id="matchBadge" style="display:none">0</span>
         </button>
         <button class="nav-btn" data-page="chat" onclick="showPage('chat', this)">
           <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
           Nachrichten
+          <span class="badge" id="msgBadge" style="display:none">0</span>
         </button>
         <button class="nav-btn" data-page="profile" onclick="showPage('profile', this)">
           <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -721,11 +793,13 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
       <button onclick="showPage('discover', this)" class="active" data-page="discover">
         <svg viewBox="0 0 24 24"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg>
       </button>
-      <button onclick="showPage('matches', this)" data-page="matches">
+      <button onclick="showPage('matches', this)" data-page="matches" style="position:relative">
         <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span class="badge mobile-msg-badge" id="matchBadgeMobile" style="display:none">0</span>
       </button>
-      <button onclick="showPage('chat', this)" data-page="chat">
+      <button onclick="showPage('chat', this)" data-page="chat" style="position:relative">
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        <span class="badge mobile-msg-badge" id="msgBadgeMobile" style="display:none">0</span>
       </button>
       <button onclick="showPage('profile', this)" data-page="profile">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -917,6 +991,10 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
           <p>Dario Poprzen, Punzerstrasse 50, 4400 Steyr, Österreich. E-Mail: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e78386958e88c9978897959d8289a7808a868e8bc984888a">[email&#160;protected]</a></p>
           <h2>§ 2 Leistungen</h2>
           <p>Herzfunke ist eine Online-Dating-Plattform mit kostenlosen Basisfunktionen sowie kostenpflichtiger Premium-Mitgliedschaft und Herzfunken-Credits.</p>
+          <h2>§ 2a Team-betreute Profile und „Matches“</h2>
+          <p>Ein Teil der angezeigten Profile wird von unserem <strong>Team</strong> betreut. Die Kommunikation mit diesen Profilen erfolgt über die Plattform und kann durch Mitarbeitende bzw. autorisierte Bearbeiter erfolgen.</p>
+          <p>Ein <strong>„Match“</strong> oder eine Kontaktaufnahme mit einem team-betreuten Profil begründet <strong>keine</strong> Garantie dafür, dass ausschließlich eine bestimmte natürliche Person hinter dem Profil steht oder dass ein persönliches Treffen mit einer konkreten Person zustande kommt; es handelt sich vielmehr um die Nutzung der Plattformleistung zur Kontaktvermittlung bzw. Kommunikation im Rahmen des angebotenen Dienstes.</p>
+          <p>Andere Profile werden in der Regel von den jeweiligen registrierten Mitgliedern selbst geführt.</p>
           <h2>§ 3 Mindestalter</h2>
           <p>Die Nutzung ist ausschließlich Personen ab <strong>18 Jahren</strong> gestattet. Mit der Registrierung bestätigt der Nutzer die Volljährigkeit.</p>
           <h2>§ 4 Nutzerpflichten</h2>
@@ -935,7 +1013,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
           <div class="legal-highlight"><p>⚠️ Erste Treffen stets an öffentlichen Orten. Keine Bankdaten an andere Nutzer weitergeben. Verdächtiges Verhalten melden.</p></div>
           <h2>§ 8 Anwendbares Recht</h2>
           <p>Es gilt österreichisches Recht. Gerichtsstand: Steyr, Österreich.</p>
-          <p style="color:var(--text3);font-size:12px;margin-top:32px">Stand: 28. März 2026</p>
+          <p style="color:var(--text3);font-size:12px;margin-top:32px">Stand: 1. April 2026</p>
         </div>
 
         <!-- COOKIES -->
@@ -1030,21 +1108,23 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
     </div>
   </div>
 
-  <!-- MATCH POPUP -->
-  <div id="matchPopup" class="match-popup">
-    <div class="match-popup-inner">
-      <div class="match-hearts">♡ ♡ ♡</div>
-      <h2>Es ist ein Match!</h2>
-      <p>Du und <span id="matchName">Lisa</span> mögt euch gegenseitig</p>
-      <div class="match-avatars">
-        <div class="match-avatar you"></div>
-        <div class="match-avatar them" id="matchAvatar"></div>
+  <!-- Match-Feier (z. B. nach Like in Entdecken + Admin-Matchen) -->
+  <div id="matchCelebrationModal" class="match-popup" onclick="if(event.target===this)closeMatchCelebration(false)">
+    <div class="match-popup-inner" onclick="event.stopPropagation()">
+      <div class="match-hearts">💕✨💕</div>
+      <h2>Es hat gematcht!</h2>
+      <p id="matchCelebrationSub" style="color:var(--text2);font-size:14px">Ihr mögt euch – schreibt euch jetzt.</p>
+      <div class="match-avatars" style="justify-content:center;gap:12px">
+        <img id="matchCelebrationYouPhoto" class="match-avatar you" alt="" style="object-fit:cover;display:none" />
+        <img id="matchCelebrationPartnerPhoto" class="match-avatar" alt="" style="object-fit:cover;display:none" />
       </div>
-      <button class="btn-primary" onclick="openChat()">Nachricht senden</button>
-      <button class="btn-secondary" onclick="closeMatchPopup()">Weiter entdecken</button>
+      <p id="matchCelebrationPartnerName" style="font-family:var(--font-display);font-size:22px;font-weight:400;color:var(--text)"></p>
+      <button type="button" class="btn-primary" style="margin-top:8px;width:100%;max-width:280px" onclick="closeMatchCelebration(true)">Zum Chat</button>
+      <button type="button" class="btn-secondary" style="margin-top:4px" onclick="closeMatchCelebration(false)">Später</button>
     </div>
   </div>
 
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" crossorigin="anonymous"></script>
   <script>
 // ===== CONFIG =====
 const API = (localStorage.getItem('hf_api') || `${window.location.origin}/api`).replace(/\/+$/, '');
@@ -1059,6 +1139,16 @@ let activeChat = null;
 let socket = null;
 let interests = [];
 let chatPollTimer = null;
+let matchSyncTimer = null;
+/** Team-/Profil-IDs, denen der Nutzer in Entdecken ein Herz gegeben hat (like/super) */
+const likedTeamProfileIds = new Set();
+/** match_id, für die die Feier schon gezeigt wurde */
+const matchCelebrationShownFor = new Set();
+/** Fallback, falls API unread_count 0 liefert: hochzählen bei eingehender Socket-Nachricht */
+const chatListLocalUnread = new Map();
+/** Letzte /matches-Liste für sofortiges Neuzeichnen ohne Fetch */
+let lastMatchesListForChat = [];
+let unreadPollTimer = null;
 
 function normalizeInterests(value) {
   if (Array.isArray(value)) return value.filter(Boolean).map(String);
@@ -1174,7 +1264,14 @@ async function handleLogin() {
     const data = await res.json();
     if (!res.ok) return setAuthError(data.message || 'Fehler beim Anmelden');
     saveSession(data.user, data.token);
+    // Sofort anzeigen (ohne auf async Sync zu warten)
+    try {
+      const badge = document.getElementById('walletBadge');
+      if (badge) badge.textContent = String(data?.user?.coins ?? 0);
+    } catch {}
     showApp();
+    // Coins/Profil direkt frisch vom Server laden (z. B. Startguthaben)
+    setTimeout(() => { try { refreshSessionFromServer(); } catch {} }, 150);
   } catch (e) {
     setAuthError('Server nicht erreichbar. Bitte später erneut versuchen.');
   }
@@ -1198,7 +1295,14 @@ async function handleRegister() {
     const data = await res.json();
     if (!res.ok) return setAuthError(data.message || 'Fehler bei der Registrierung');
     saveSession(data.user, data.token);
+    // Sofort anzeigen (ohne auf async Sync zu warten)
+    try {
+      const badge = document.getElementById('walletBadge');
+      if (badge) badge.textContent = String(data?.user?.coins ?? 0);
+    } catch {}
     showApp();
+    // Coins/Profil direkt frisch vom Server laden (Startguthaben sicher anzeigen)
+    setTimeout(() => { try { refreshSessionFromServer(); } catch {} }, 150);
   } catch (e) {
     setAuthError('Server nicht erreichbar. Bitte später erneut versuchen.');
   }
@@ -1210,6 +1314,16 @@ function setAuthError(msg) {
   setTimeout(() => el.textContent = '', 4000);
 }
 
+function setApiBase() {
+  const cur = localStorage.getItem('hf_api') || `${window.location.origin}/api`;
+  const v = prompt('API Basis-URL (z.B. http://192.168.0.10:3000/api)', cur);
+  if (v == null) return;
+  const norm = String(v).trim().replace(/\/+$/, '');
+  if (!norm) return;
+  localStorage.setItem('hf_api', norm);
+  location.reload();
+}
+
 function saveSession(user, tok) {
   currentUser = user;
   token = tok;
@@ -1219,6 +1333,12 @@ function saveSession(user, tok) {
 }
 
 function handleLogout() {
+  disconnectChatSocket();
+  if (unreadPollTimer) { clearInterval(unreadPollTimer); unreadPollTimer = null; }
+  if (matchSyncTimer) { clearInterval(matchSyncTimer); matchSyncTimer = null; }
+  likedTeamProfileIds.clear();
+  matchCelebrationShownFor.clear();
+  chatListLocalUnread.clear();
   localStorage.removeItem('hf_user');
   localStorage.removeItem('hf_token');
   currentUser = null; token = null;
@@ -1226,6 +1346,7 @@ function handleLogout() {
   document.getElementById('authOverlay').classList.add('active');
   showLogin();
   refreshWalletDisplay();
+  refreshUnreadBadge();
 }
 
 // ===== APP =====
@@ -1236,16 +1357,233 @@ function showApp() {
   loadMatches();
   loadChats();
   loadProfile();
+  // Einmalig beim App-Start: Session vom Server syncen (Coins etc.)
+  setTimeout(() => { try { refreshSessionFromServer(); } catch {} }, 200);
   document.getElementById('discoverGreeting').textContent =
     `Hallo ${currentUser?.name || 'dort'} 👋 Wen möchtest du heute kennenlernen?`;
   refreshWalletDisplay();
+  connectChatSocket();
+  refreshUnreadBadge();
+  if (unreadPollTimer) clearInterval(unreadPollTimer);
+  unreadPollTimer = setInterval(() => refreshUnreadBadge(), 12000);
+  if (matchSyncTimer) clearInterval(matchSyncTimer);
+  matchSyncTimer = setInterval(() => {
+    if (!token || document.hidden) return;
+    loadMatches().catch(() => {});
+    loadChats().catch(() => {});
+  }, 45000);
 }
 
 function refreshWalletDisplay() {
   try { currentUser = JSON.parse(localStorage.getItem('hf_user') || 'null'); } catch {}
   const coins = currentUser?.coins ?? '—';
+  // Falls UI noch alte Session zeigt: einmalig vom Server nachziehen (ohne Spam)
+  try {
+    const n = Number(coins);
+    const needsSync = token && (coins === '—' || (Number.isFinite(n) && n === 0));
+    const last = Number(window.__lastWalletSyncAt || 0);
+    if (needsSync && Date.now() - last > 8000) {
+      window.__lastWalletSyncAt = Date.now();
+      refreshSessionFromServer().catch(() => {});
+    }
+  } catch {}
   const badge = document.getElementById('walletBadge');
   if (badge) badge.textContent = coins;
+}
+
+function disconnectChatSocket() {
+  try { socket?.disconnect(); } catch {}
+  socket = null;
+}
+
+function connectChatSocket() {
+  disconnectChatSocket();
+  if (typeof io === 'undefined' || !token) return;
+  const origin = API.replace(/\/api\/?$/, '');
+  socket = io(origin, { auth: { token }, transports: ['websocket', 'polling'] });
+  socket.on('connect', () => {
+    if (activeChat?.matchId) socket.emit('join_match', activeChat.matchId);
+  });
+  socket.on('message', (payload) => {
+    const msg = payload && typeof payload === 'object' && payload.message != null ? payload.message : payload;
+    const mid = Number(payload?.matchId ?? msg?.match_id ?? 0);
+    const sid = msg?.sender_id != null ? msg.sender_id : msg?.senderId;
+    if (sid != null && Number(sid) === Number(currentUser?.id)) return;
+    if (!msg || mid <= 0) return;
+    const onChatPage = document.getElementById('page-chat')?.classList.contains('active');
+    const viewingThis = onChatPage && Number(activeChat?.matchId) === mid;
+    if (!viewingThis) {
+      chatListLocalUnread.set(mid, Math.min(99, (chatListLocalUnread.get(mid) || 0) + 1));
+      if (onChatPage && lastMatchesListForChat.length) renderChatListItemsFromMatchesCache();
+    }
+    refreshUnreadBadge();
+    setTimeout(() => refreshUnreadBadge(), 200);
+    setTimeout(() => refreshUnreadBadge(), 600);
+    if (onChatPage && activeChat?.matchId && mid === activeChat.matchId) {
+      reloadActiveChatMessages(true);
+    } else {
+      loadChats().catch(() => {});
+    }
+  });
+  socket.on('new_match', (payload) => {
+    const mid = Number(payload?.matchId || 0);
+    const likedFirst = !!payload?.likedFirst;
+    const partnerId = Number(payload?.partnerId || 0);
+    const partnerName = String(payload?.partnerName || '').trim();
+    const partnerPhoto = String(payload?.partnerPhoto || '').trim();
+    loadMatches().catch(() => {}).then(() => {
+      refreshUnreadBadge();
+      loadChats().catch(() => {});
+      if (mid && likedFirst && partnerId && !matchCelebrationShownFor.has(mid)) {
+        matchCelebrationShownFor.add(mid);
+        likedTeamProfileIds.delete(partnerId);
+        showMatchCelebrationModal({
+          match_id: mid,
+          id: partnerId,
+          name: partnerName || 'Match',
+          photo: partnerPhoto,
+        });
+        return;
+      }
+      maybeShowDiscoverMatchCelebration();
+    });
+  });
+  socket.on('match_removed', (payload) => {
+    const mid = Number(payload?.matchId || 0);
+    if (mid) chatListLocalUnread.delete(mid);
+    if (mid && activeChat?.matchId === mid) {
+      activeChat = null;
+      const win = document.getElementById('chatWindow');
+      if (win) {
+        win.innerHTML = `
+        <div class="chat-empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div class="chat-empty-icon">💬</div>
+          <h3>Chat beendet</h3>
+          <p style="color:var(--text2);font-size:14px;text-align:center;padding:0 24px">Dieses Gespräch wurde entfernt.</p>
+        </div>`;
+      }
+    }
+    loadChats().catch(() => {});
+    loadMatches().catch(() => {});
+    refreshUnreadBadge();
+  });
+}
+
+async function refreshUnreadBadge() {
+  const msgBadges = [document.getElementById('msgBadge'), document.getElementById('msgBadgeMobile')];
+  const matchBadges = [document.getElementById('matchBadge'), document.getElementById('matchBadgeMobile')];
+  if (!token) {
+    [...msgBadges, ...matchBadges].forEach(b => { if (b) b.style.display = 'none'; });
+    return;
+  }
+  try {
+    const [res, resMatches] = await Promise.all([
+      fetch(`${API}/messages/unread-count`, { headers: authHeaders() }),
+      fetch(`${API}/matches`, { headers: authHeaders() }),
+    ]);
+    if (res.status === 401 || resMatches.status === 401) return handleLogout();
+    const data = await res.json().catch(() => ({}));
+    const matchRows = await resMatches.json().catch(() => []);
+    if (!res.ok && !resMatches.ok) return;
+    const unread = res.ok ? Math.min(99, Number(data.count || 0)) : 0;
+    const msgN = Math.min(99, unread);
+    const listM = resMatches.ok && Array.isArray(matchRows) ? matchRows : [];
+    const newMatchN = listM.filter(m => Number(m.unopened) === 1).length;
+    const matchN = Math.min(99, newMatchN);
+    const labelMsg = msgN > 9 ? '9+' : String(Math.max(0, msgN));
+    const labelMatch = matchN > 9 ? '9+' : String(Math.max(0, matchN));
+    msgBadges.forEach(b => {
+      if (!b) return;
+      if (msgN > 0) {
+        b.textContent = labelMsg;
+        b.style.display = '';
+      } else {
+        b.style.display = 'none';
+      }
+    });
+    matchBadges.forEach(b => {
+      if (!b) return;
+      if (matchN > 0) {
+        b.textContent = labelMatch;
+        b.style.display = '';
+      } else {
+        b.style.display = 'none';
+      }
+    });
+    if (document.getElementById('page-chat')?.classList.contains('active') && resMatches.ok) {
+      const list = Array.isArray(matchRows) ? matchRows : [];
+      renderChatListItems(list);
+    } else if (document.getElementById('page-chat')?.classList.contains('active')) {
+      loadChats().catch(() => {});
+    }
+  } catch {}
+}
+
+function rowUnreadCount(m) {
+  const v = m.unread_count != null ? m.unread_count : m.unreadCount;
+  const n = Number(v);
+  return Math.min(99, Math.max(0, Number.isFinite(n) ? n : 0));
+}
+
+function matchRowId(m) {
+  return Number(m.match_id != null ? m.match_id : m.matchId);
+}
+
+function renderChatListItemsFromMatchesCache() {
+  if (lastMatchesListForChat.length > 0) renderChatListItems(lastMatchesListForChat);
+}
+
+function renderChatListItems(list) {
+  const items = document.getElementById('chatListItems');
+  if (!items) return;
+  if (!Array.isArray(list) || !list.length) {
+    lastMatchesListForChat = [];
+    items.innerHTML = `<div class="empty-state">Noch keine Matches. Swipe dich erstmal durch 💕</div>`;
+    return;
+  }
+  for (const m of list) {
+    const mid = matchRowId(m);
+    if (mid && rowUnreadCount(m) > 0) chatListLocalUnread.delete(mid);
+  }
+  lastMatchesListForChat = list.map(r => ({ ...r }));
+  items.innerHTML = list.map(m => {
+    const ph = String(m.photo || '').trim();
+    const av = ph
+      ? `<img class="chat-avatar" src="${escapeAttr(ph)}" alt="${escapeAttr(m.name || 'Chat')}">`
+      : `<div class="chat-avatar chat-avatar-empty" aria-hidden="true"></div>`;
+    const mid = matchRowId(m);
+    const unread = Math.min(99, Math.max(rowUnreadCount(m), chatListLocalUnread.get(mid) || 0));
+    const unreadLabel = unread > 9 ? '9+' : String(unread);
+    const badgeNearName = unread > 0
+      ? `<span class="chat-unread-near-name" aria-label="${unread} ungelesen">${unreadLabel}</span>`
+      : '';
+    return `
+      <div class="chat-list-item" data-match-id="${mid}" onclick="openMatchChat(${mid}, '${escapeAttr(m.name||'')}', '${escapeAttr(m.photo||'')}')">
+        ${av}
+        <div class="chat-item-info">
+          <div class="chat-item-name-row">
+            <h4>${escapeHtml(m.name || 'Unbekannt')}</h4>
+            ${badgeNearName}
+          </div>
+          <p>Tippe, um zu chatten…</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+  const activeMid = activeChat?.matchId;
+  if (activeMid) {
+    items.querySelectorAll('.chat-list-item').forEach(el => {
+      el.classList.toggle('active', Number(el.dataset.matchId) === Number(activeMid));
+    });
+  }
+}
+
+async function markMatchRead(matchId) {
+  if (!token || !matchId) return;
+  try {
+    const res = await fetch(`${API}/messages/${matchId}/read`, { method: 'POST', headers: authHeaders() });
+    if (res.status === 401) return handleLogout();
+  } catch {}
 }
 
 // ===== NAVIGATION =====
@@ -1263,6 +1601,12 @@ function showPage(page, btn) {
   if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
   if (page === 'chat') {
     chatPollTimer = setInterval(() => reloadActiveChatMessages(), 2500);
+    refreshUnreadBadge();
+    loadChats().catch(() => {});
+  }
+  if (page === 'matches') {
+    refreshUnreadBadge();
+    loadMatches().catch(() => {});
   }
 }
 
@@ -1289,16 +1633,18 @@ function createCard(profile) {
   const card = document.createElement('div');
   card.className = 'profile-card';
   const tags = Array.isArray(profile.tags) ? profile.tags : [];
-  const managedTag = profile.is_managed ? '<span class="card-tag managed">Team-betreut</span>' : '';
+  const pUrl = String(profile.photo || '').trim();
+  const topPhoto = pUrl
+    ? `<img class="card-photo" src="${escapeAttr(pUrl)}" alt="${escapeAttr(profile.name)}" draggable="false">`
+    : `<div class="card-photo card-photo-empty" aria-hidden="true"></div>`;
   card.innerHTML = `
-    <img class="card-photo" src="${profile.photo}" alt="${profile.name}" draggable="false">
+    ${topPhoto}
     <div class="card-gradient"></div>
     <div class="card-info">
       <h3>${profile.name}, ${profile.age}</h3>
       <p class="card-meta">📍 ${profile.city}</p>
       <p class="card-bio">${profile.bio}</p>
       <div class="card-tags">
-        ${managedTag}
         ${tags.map(t => `<span class="card-tag">${escapeHtml(t)}</span>`).join('')}
       </div>
     </div>
@@ -1377,10 +1723,10 @@ async function swipe(direction) {
       return;
     }
 
-    swipeCard(topCard, direction, profile);
-    if ((action === 'like' || action === 'super') && data?.isMatch) {
-      setTimeout(() => showMatchPopup(profile), 650);
+    if (action === 'like' || action === 'super') {
+      likedTeamProfileIds.add(Number(profile.id));
     }
+    swipeCard(topCard, direction, profile);
   } catch {
     showToast('Server nicht erreichbar.');
   }
@@ -1406,13 +1752,82 @@ function showNoMoreCards() {
   stack.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text2)">
       <div style="font-size:48px">✨</div>
-      <h3 style="font-family:var(--font-display);font-size:22px;color:var(--text)">Alle gesehen!</h3>
-      <p>Schau morgen wieder vorbei</p>
+      <h3 style="font-family:var(--font-display);font-size:22px;color:var(--text)">Keine Profile gefunden</h3>
+      <p style="max-width:420px;text-align:center">Wenn du lokal testest: erst Accounts seeden und dann neu laden. Auf dem Handy muss die API auf die PC-IP zeigen.</p>
       <button class="btn-primary" style="max-width:200px;margin-top:8px" onclick="loadDiscover()">Neu laden</button>
     </div>`;
 }
 
 // handleLike (Demo) entfernt – Swipe läuft über die API
+
+function absolutePhotoUrl(photo) {
+  const ph = String(photo || '').trim();
+  if (!ph) return '';
+  if (ph.startsWith('http://') || ph.startsWith('https://')) return ph;
+  const origin = API.replace(/\/api\/?$/, '');
+  return origin + (ph.startsWith('/') ? ph : `/${ph}`);
+}
+
+function showMatchCelebrationModal(m) {
+  const modal = document.getElementById('matchCelebrationModal');
+  const nameEl = document.getElementById('matchCelebrationPartnerName');
+  const imgEl = document.getElementById('matchCelebrationPartnerPhoto');
+  const youEl = document.getElementById('matchCelebrationYouPhoto');
+  if (nameEl) nameEl.textContent = m.name || 'Match';
+  const ph = absolutePhotoUrl(m.photo);
+  if (imgEl) {
+    if (ph) {
+      imgEl.src = ph;
+      imgEl.alt = m.name || '';
+      imgEl.style.display = '';
+    } else {
+      imgEl.style.display = 'none';
+    }
+  }
+  if (youEl) {
+    const y = absolutePhotoUrl(currentUser?.photo);
+    if (y) {
+      youEl.src = y;
+      youEl.style.display = '';
+    } else {
+      youEl.style.display = 'none';
+    }
+  }
+  if (modal) {
+    modal.dataset.matchId = String(m.match_id || '');
+    modal.dataset.partnerName = m.name || '';
+    modal.dataset.partnerPhoto = String(m.photo || '');
+    modal.classList.add('active');
+  }
+}
+
+function closeMatchCelebration(goChat) {
+  const modal = document.getElementById('matchCelebrationModal');
+  const mid = Number(modal?.dataset?.matchId || 0);
+  const name = modal?.dataset?.partnerName || '';
+  const photo = modal?.dataset?.partnerPhoto || '';
+  modal?.classList.remove('active');
+  if (goChat && mid) {
+    showPage('chat', document.querySelector('[data-page="chat"]'));
+    openMatchChat(mid, name, photo);
+  }
+}
+
+/** Nach Entdecken-Like + Admin-Matchen: Feier, sobald das Match in der Liste ist (ohne Socket-Payload). */
+function maybeShowDiscoverMatchCelebration() {
+  if (!matches?.length) return;
+  for (const m of matches) {
+    const pid = Number(m.id);
+    const mid = Number(m.match_id);
+    if (!mid || matchCelebrationShownFor.has(mid)) continue;
+    if (!m.isNew) continue;
+    if (!likedTeamProfileIds.has(pid)) continue;
+    likedTeamProfileIds.delete(pid);
+    matchCelebrationShownFor.add(mid);
+    showMatchCelebrationModal(m);
+    return;
+  }
+}
 
 // ===== MATCHES =====
 async function loadMatches() {
@@ -1430,11 +1845,12 @@ async function loadMatches() {
       name: m.name || 'Unbekannt',
       age: m.age ?? '',
       city: m.city ?? '',
-      photo: m.photo || 'https://i.pravatar.cc/300?img=10',
+      photo: String(m.photo || '').trim(),
       is_managed: Number(m.is_managed || 0),
-      isNew: false
+      isNew: Number(m.unopened) === 1
     }));
     renderMatches();
+    maybeShowDiscoverMatchCelebration();
   } catch {
     matches = [];
     renderMatches();
@@ -1446,24 +1862,26 @@ function renderMatches() {
   if (!grid) return;
   if (!matches.length) {
     grid.innerHTML = `<div class="empty-state">Noch keine Matches.</div>`;
-    const badge = document.getElementById('matchBadge');
-    if (badge) badge.style.display = 'none';
+    refreshUnreadBadge();
     return;
   }
-  grid.innerHTML = matches.map(m => `
+  grid.innerHTML = matches.map(m => {
+    const ph = String(m.photo || '').trim();
+    const thumb = ph
+      ? `<img src="${escapeAttr(ph)}" alt="${escapeAttr(m.name)}">`
+      : `<div class="match-card-photo-empty" aria-hidden="true"></div>`;
+    return `
     <div class="match-card" onclick="openMatchChat(${Number(m.match_id)}, '${escapeAttr(m.name)}', '${escapeAttr(m.photo)}')">
-      <img src="${escapeAttr(m.photo)}" alt="${escapeAttr(m.name)}">
+      ${thumb}
       <div class="match-card-info">
-        <h4>${escapeHtml(m.name)}${m.age ? `, ${escapeHtml(m.age)}` : ''}${m.is_managed ? ' <span style="font-size:11px;color:var(--gold);font-weight:700">· Team</span>' : ''}</h4>
+        <h4>${escapeHtml(m.name)}${m.age ? (', ' + escapeHtml(m.age)) : ''}</h4>
         <p>📍 ${escapeHtml(m.city || '')}</p>
         ${m.isNew ? '<span class="match-new">Neu ✓</span>' : ''}
       </div>
     </div>
-  `).join('');
-  const badge = document.getElementById('matchBadge');
-  const newCount = matches.filter(m => m.isNew).length;
-  badge.textContent = newCount;
-  badge.style.display = newCount > 0 ? '' : 'none';
+  `;
+  }).join('');
+  refreshUnreadBadge();
 }
 
 // ===== CHAT =====
@@ -1478,55 +1896,52 @@ async function loadChats() {
     if (!res.ok) throw new Error(data?.message || 'Chats konnten nicht geladen werden');
 
     const list = Array.isArray(data) ? data : [];
-    if (!list.length) {
-      items.innerHTML = `<div class="empty-state">Noch keine Matches. Swipe dich erstmal durch 💕</div>`;
-      return;
-    }
-
-    items.innerHTML = list.map(m => `
-      <div class="chat-list-item" onclick="openMatchChat(${Number(m.match_id)}, '${escapeAttr(m.name||'')}', '${escapeAttr(m.photo||'')}')">
-        <img class="chat-avatar" src="${m.photo || 'https://i.pravatar.cc/200?img=10'}" alt="${escapeAttr(m.name||'Chat')}">
-        <div class="chat-item-info">
-          <h4>${escapeHtml(m.name || 'Unbekannt')}</h4>
-          <p>Tippe, um zu chatten…</p>
-        </div>
-      </div>
-    `).join('');
+    renderChatListItems(list);
   } catch (e) {
     items.innerHTML = `<div class="empty-state">Fehler beim Laden der Chats.</div>`;
   }
 }
 
 async function openMatchChat(matchId, name, photo) {
+  const midOpen = Number(matchId);
+  chatListLocalUnread.delete(midOpen);
   showPage('chat', document.querySelector('[data-page="chat"]'));
-  activeChat = { matchId: Number(matchId), name, photo, renderedIds: new Set(), lastMsgId: 0 };
+  activeChat = { matchId: midOpen, name, photo, renderedIds: new Set(), lastMsgId: 0 };
   const win = document.getElementById('chatWindow');
+  const ph = String(photo || '').trim();
+  const headerAv = ph
+    ? `<img class="chat-avatar" src="${escapeAttr(ph)}" alt="${escapeAttr(name)}">`
+    : `<div class="chat-avatar chat-avatar-empty" aria-hidden="true"></div>`;
   win.innerHTML = `
     <div class="chat-header">
-      <img class="chat-avatar" src="${photo}" alt="${name}">
-      <div>
-        <h3>${name}</h3>
-        <p class="chat-online">● Online</p>
+      <div class="chat-header-main">
+        ${headerAv}
+        <div>
+          <h3>${escapeHtml(name)}</h3>
+          <p class="chat-online">● Online</p>
+        </div>
       </div>
     </div>
-    <div class="chat-messages" id="chatMessages">
-      <div class="message theirs">
-        <div class="message-bubble">Lade Nachrichten…</div>
-        <div class="message-time"> </div>
-      </div>
-    </div>
+    <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
+      <input type="file" id="chatImageFile" accept="image/*" style="display:none" onchange="sendChatImage()">
+      <button class="send-btn" title="Bild senden" onclick="document.getElementById('chatImageFile').click()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);margin-right:8px">
+        <svg viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+      </button>
       <input type="text" id="chatInput" placeholder="Nachricht schreiben..." onkeydown="handleChatKey(event)">
       <button class="send-btn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
   `;
-  // Mark active in list
-  document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.chat-list-item').forEach(el => {
+    el.classList.remove('active');
+    if (Number(el.dataset.matchId) === Number(matchId)) el.classList.add('active');
+  });
 
   const box = document.getElementById('chatMessages');
   if (box) box.innerHTML = '';
+  if (socket?.connected) socket.emit('join_match', Number(matchId));
   await reloadActiveChatMessages(true);
 }
 
@@ -1554,17 +1969,21 @@ async function reloadActiveChatMessages(force = false) {
     }
 
     if (!list.length && force) {
-      appendMessage('Schreib die erste Nachricht 😊', 'theirs');
+      box.innerHTML = '<div class="chat-empty-hint">Noch keine Nachrichten</div>';
     } else {
       for (const m of list) {
         const id = Number(m.id);
         if (activeChat.renderedIds?.has(id)) continue;
         activeChat.renderedIds?.add(id);
-        appendMessage(m.text, Number(m.sender_id) === Number(currentUser?.id) ? 'mine' : 'theirs', m.created_at);
+        appendMessage(m, Number(m.sender_id) === Number(currentUser?.id) ? 'mine' : 'theirs', m.created_at);
       }
     }
 
     if (shouldScroll) box.scrollTop = box.scrollHeight;
+
+    await markMatchRead(activeChat.matchId);
+    await refreshUnreadBadge();
+    loadChats().catch(() => {});
   } catch {
     // still keep current UI
   }
@@ -1619,16 +2038,77 @@ async function sendMessage() {
   }
 }
 
-function appendMessage(text, type, createdAt) {
+function appendMessage(msgOrText, type, createdAt) {
   const msgs = document.getElementById('chatMessages');
   if (!msgs) return;
   const d = createdAt ? new Date(createdAt) : new Date();
   const now = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement('div');
   div.className = `message ${type}`;
-  div.innerHTML = `<div class="message-bubble">${escapeHtml(String(text ?? ''))}</div><div class="message-time">${now}</div>`;
+  const m = (msgOrText && typeof msgOrText === 'object') ? msgOrText : null;
+  const text = m ? String(m.text ?? '') : String(msgOrText ?? '');
+  const img = m ? String(m.image_url || '').trim() : '';
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
+  if (img) {
+    const im = document.createElement('img');
+    im.src = img;
+    im.alt = 'Bild';
+    im.style.cssText = 'max-width:220px;max-height:220px;border-radius:12px;display:block';
+    im.onclick = () => window.open(img, '_blank');
+    bubble.appendChild(im);
+    if (text && text !== '📷 Bild') {
+      const t = document.createElement('div');
+      t.style.marginTop = '8px';
+      t.innerHTML = escapeHtml(text);
+      bubble.appendChild(t);
+    }
+  } else {
+    bubble.innerHTML = escapeHtml(text);
+  }
+  const time = document.createElement('div');
+  time.className = 'message-time';
+  time.textContent = now;
+  div.appendChild(bubble);
+  div.appendChild(time);
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendChatImage() {
+  const f = document.getElementById('chatImageFile')?.files?.[0];
+  if (!f) return;
+  if (!activeChat?.matchId) return;
+  document.getElementById('chatImageFile').value = '';
+  try {
+    const fd = new FormData();
+    fd.append('matchId', String(activeChat.matchId));
+    fd.append('image', f);
+    const res = await fetch(`${API}/messages/image`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: fd
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return handleLogout();
+    if (!res.ok) {
+      if (res.status === 402) showToast(data?.message || 'Nicht genug Herzfunken.');
+      else showToast(data?.message || 'Bild senden fehlgeschlagen.');
+      await refreshSessionFromServer();
+      return;
+    }
+    if (data?.wallet) {
+      const merged = { ...(currentUser || {}), coins: data.wallet.coins, is_premium: data.wallet.isPremium ? 1 : 0 };
+      localStorage.setItem('hf_user', JSON.stringify(merged));
+      currentUser = merged;
+      refreshWalletDisplay();
+    } else {
+      await refreshSessionFromServer();
+    }
+    await reloadActiveChatMessages(true);
+  } catch {
+    showToast('Server nicht erreichbar.');
+  }
 }
 
 async function refreshSessionFromServer() {
@@ -1651,10 +2131,17 @@ function loadProfile() {
   document.getElementById('profileAge').value = currentUser.age || '';
   document.getElementById('profileCity').value = currentUser.city || '';
   document.getElementById('profileBio').value = currentUser.bio || '';
-  if (currentUser.photo) {
-    document.getElementById('profilePhoto').src = currentUser.photo;
+  const wrap = document.querySelector('.profile-photo-wrapper');
+  const img = document.getElementById('profilePhoto');
+  const p = String(currentUser.photo || '').trim();
+  if (p) {
+    img.src = p;
+    img.style.display = '';
+    wrap?.classList.remove('no-photo');
   } else {
-    document.getElementById('profilePhoto').src = `https://i.pravatar.cc/200?img=${currentUser.id || 10}`;
+    img.removeAttribute('src');
+    img.style.display = 'none';
+    wrap?.classList.add('no-photo');
   }
   interests = normalizeInterests(currentUser.interests);
   renderInterests();
@@ -1679,7 +2166,10 @@ function handlePhotoUpload(event) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById('profilePhoto').src = e.target.result;
+    const img = document.getElementById('profilePhoto');
+    img.src = e.target.result;
+    img.style.display = '';
+    document.querySelector('.profile-photo-wrapper')?.classList.remove('no-photo');
     currentUser.photo = e.target.result;
     localStorage.setItem('hf_user', JSON.stringify(currentUser));
     // Real: upload to server with FormData
@@ -1720,26 +2210,6 @@ function renderInterests() {
     tag.appendChild(x);
     wrap.appendChild(tag);
   });
-}
-
-// ===== MATCH POPUP =====
-function showMatchPopup(profile) {
-  document.getElementById('matchName').textContent = profile.name;
-  document.getElementById('matchAvatar').style.background = `url(${profile.photo}) center/cover`;
-  document.getElementById('matchPopup').classList.add('active');
-  matches.unshift({ ...profile, isNew: true });
-  renderMatches();
-}
-
-function closeMatchPopup() {
-  document.getElementById('matchPopup').classList.remove('active');
-}
-
-function openChat() {
-  closeMatchPopup();
-  const name = document.getElementById('matchName').textContent;
-  const match = matches.find(m => m.name === name);
-  if (match) openMatchChat(match.match_id || match.id, match.name, match.photo);
 }
 
 // ===== HELPERS =====
@@ -1795,25 +2265,34 @@ function formatEurFromCents(cents) {
   return `${eur}€`;
 }
 
-async function hydratePrices() {
-  try {
-    const res = await fetch(`${API}/payments/products`);
-    const list = await res.json();
-    if (!res.ok || !Array.isArray(list)) return;
-    const byId = Object.fromEntries(list.map(p => [p.id, p]));
+// Fallback (Cent) – gleiche Werte wie in payments.js, falls /payments/products nicht erreichbar
+const PRICE_FALLBACK = {
+  premium_small: 1999, premium_big: 9999,
+  coins_100: 1700, coins_500: 8500, coins_1200: 20400
+};
 
+async function hydratePrices() {
+  const apply = (byId) => {
     const setPrice = (id, elId) => {
       const p = byId[id];
       const el = document.getElementById(elId);
       if (p && el) el.textContent = formatEurFromCents(p.amount);
     };
-
     setPrice('premium_small', 'price-premium_small');
     setPrice('premium_big', 'price-premium_big');
     setPrice('coins_100', 'price-coins_100');
     setPrice('coins_500', 'price-coins_500');
     setPrice('coins_1200', 'price-coins_1200');
+  };
+  try {
+    const res = await fetch(`${API}/payments/products`);
+    const list = await res.json();
+    if (res.ok && Array.isArray(list)) {
+      apply(Object.fromEntries(list.map(p => [p.id, p])));
+      return;
+    }
   } catch {}
+  apply(Object.fromEntries(Object.entries(PRICE_FALLBACK).map(([id, amount]) => [id, { amount }])));
 }
 
 async function buyProduct(productId, btn) {
@@ -1854,6 +2333,14 @@ async function buyProduct(productId, btn) {
     if (btn) { btn.disabled = false; btn.textContent = orig || 'Auswählen'; }
   }
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && token) {
+    refreshUnreadBadge();
+    loadMatches().catch(() => {});
+    loadChats().catch(() => {});
+  }
+});
 
 </script>
 </body>

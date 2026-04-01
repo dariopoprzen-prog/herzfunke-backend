@@ -1,0 +1,37 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Repo verbinden → New Blueprint Instance, oder Web Service manuell mit gleichen Werten.
+#
+# SQLite + Uploads: Ohne Persistent Disk gehen DB und Bilder bei jedem Deploy verloren (Free-Tier).
+# Mit bezahltem Plan: Disk anlegen, DATA_DIR=/data setzen (unten auskommentiertes disk: aktivieren).
+
+services:
+  - type: web
+    name: herzfunke
+    runtime: node
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: BASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # Optional: nur wenn Persistent Disk mit mountPath /data gebunden ist
+      # - key: DATA_DIR
+      #   value: /data
+    # Persistent Disk (nur bezahlte Web-Services auf Render):
+    # disk:
+    #   name: herzfunke-data
+    #   mountPath: /data
+    #   sizeGB: 1
