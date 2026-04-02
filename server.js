@@ -60,6 +60,9 @@ const MESSAGE_COST_COINS = Number(process.env.MESSAGE_COST_COINS || 10); // 10 H
 /** Startguthaben für neue normale Nutzer (Herzfunken) */
 const NEW_USER_SIGNUP_COINS = Math.min(1000000, Math.max(0, Number(process.env.NEW_USER_SIGNUP_COINS || 50) || 50));
 const FREE_DAILY_SWIPES = Number(process.env.FREE_DAILY_SWIPES || 3); // Free-User: Swipes pro Tag (Premium = unbegrenzt)
+/** Premium-Abo: Herzfunken pro Kalendertag (Tier small / big) */
+const PREMIUM_DAILY_COINS_SMALL = Math.min(1000000, Math.max(0, Number(process.env.PREMIUM_DAILY_COINS_SMALL || 50) || 50));
+const PREMIUM_DAILY_COINS_BIG = Math.min(1000000, Math.max(0, Number(process.env.PREMIUM_DAILY_COINS_BIG || 150) || 150));
 const ADMIN_USER_ID = Number(process.env.ADMIN_USER_ID || 0) || null;
 // Ohne ENV: lokal automatisch Admin-Mail (Production: immer ADMIN_EMAIL in Render setzen!)
 const _envAdmin = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -207,6 +210,7 @@ db.serialize(() => {
   db.run(`ALTER TABLE users ADD COLUMN free_msgs_date TEXT`, [], () => {});
   db.run(`ALTER TABLE users ADD COLUMN swipes_used_today INTEGER DEFAULT 0`, [], () => {});
   db.run(`ALTER TABLE users ADD COLUMN swipes_date TEXT`, [], () => {});
+  db.run(`ALTER TABLE users ADD COLUMN premium_daily_coins_date TEXT`, [], () => {});
   db.run(`CREATE TABLE IF NOT EXISTS swipes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     swiper_id INTEGER, target_id INTEGER, action TEXT,
@@ -289,6 +293,26 @@ async function ensureNewUserSignupCoins(userId) {
   } catch {}
 }
 
+/** Premium-Nutzer: einmal pro Kalendertag Herzfunken gut schreiben (small/big). */
+async function ensurePremiumDailyCoins(userId) {
+  try {
+    const uid = Number(userId);
+    if (!uid) return;
+    const u = await dbGet(
+      'SELECT id, is_bot, is_premium, premium_tier, premium_daily_coins_date FROM users WHERE id=?',
+      [uid]
+    );
+    if (!u || Number(u.is_bot || 0) === 1) return;
+    if (Number(u.is_premium || 0) !== 1) return;
+    const tier = String(u.premium_tier || '').toLowerCase();
+    const grant = tier === 'big' ? PREMIUM_DAILY_COINS_BIG : tier === 'small' ? PREMIUM_DAILY_COINS_SMALL : 0;
+    if (grant <= 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (String(u.premium_daily_coins_date || '') === today) return;
+    await dbRun('UPDATE users SET coins = coins + ?, premium_daily_coins_date = ? WHERE id = ?', [grant, today, uid]);
+  } catch {}
+}
+
 // Einmalige Mini-Migration beim Start: falls es "neue" User mit zu wenig Coins gibt,
 // die noch nie gesendet haben (z. B. Registrierung über alten Prozess), auf Startguthaben setzen.
 (async () => {
@@ -363,11 +387,20 @@ async function getUserPhotos(userId) {
   } catch {}
 })();
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Nicht authentifiziert' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { res.status(401).json({ message: 'Token ungültig' }); }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return res.status(401).json({ message: 'Token ungültig' });
+  }
+  try {
+    await ensurePremiumDailyCoins(req.user.id);
+  } catch (e) {
+    console.warn('ensurePremiumDailyCoins:', e?.message || e);
+  }
+  next();
 }
 const safeUser = u => { if (!u) return null; const {password, ...s} = u; return s; };
 

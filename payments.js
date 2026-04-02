@@ -31,9 +31,9 @@ const PRODUCTS = {
     amount: 1999,        // 19,99 €
     currency: 'eur',
     interval: 'month',
-    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '10 Herzfunken inklusive'],
+    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '50 Herzfunken täglich'],
     premiumTier: 'small',
-    coins: 10,
+    coins: 50,
     stripePriceId: process.env.STRIPE_PRICE_PREMIUM_SMALL || null, // optional
   },
 
@@ -44,9 +44,9 @@ const PRODUCTS = {
     amount: 9999,       // 99,99 € / Jahr
     currency: 'eur',
     interval: 'year',
-    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '50 Herzfunken inklusive'],
+    features: ['Unbegrenzt swipen', 'Unbegrenzt liken', '150 Herzfunken täglich'],
     premiumTier: 'big',
-    coins: 50,
+    coins: 150,
     stripePriceId: process.env.STRIPE_PRICE_PREMIUM_BIG || null,
   },
 

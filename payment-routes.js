@@ -119,13 +119,20 @@ module.exports = function(db, authMiddleware) {
         const days = product.interval === 'year' ? 365 : 30;
         const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
         const coinsGrant = Number(product.coins || 0);
+        const today = new Date().toISOString().slice(0, 10);
+        // Erstkauf: sofortige Gutschrift + Datum setzen (kein doppelter Tagesbonus durch ensurePremiumDailyCoins)
         await dbRun(
-          `UPDATE users SET is_premium=1, premium_tier=?, stripe_customer_id=?, subscription_id=? WHERE id=?`,
-          [product.premiumTier || null, customerId, session.subscription?.id || null, userId]
+          `UPDATE users SET is_premium=1, premium_tier=?, stripe_customer_id=?, subscription_id=?,
+           premium_daily_coins_date=?, coins = coins + ? WHERE id=?`,
+          [
+            product.premiumTier || null,
+            customerId,
+            session.subscription?.id || null,
+            today,
+            Math.max(0, coinsGrant),
+            userId,
+          ]
         );
-        if (coinsGrant > 0) {
-          await dbRun('UPDATE users SET coins = coins + ? WHERE id=?', [coinsGrant, userId]);
-        }
         await dbRun(
           `UPDATE purchases SET expires_at=? WHERE stripe_session_id=?`,
           [expiresAt, session.id]
@@ -195,18 +202,11 @@ module.exports = function(db, authMiddleware) {
           }
 
           case 'invoice.payment_succeeded': {
-            // Abo-Verlängerung
+            // Abo-Verlängerung – Premium-Flag setzen; Herzfunken laufen über tägliche Gutschrift im App-Backend
             const invoice = event.data.object;
             const customerId = invoice.customer;
             await dbRun('UPDATE users SET is_premium=1 WHERE stripe_customer_id=?', [customerId]);
-            // Coins bei Verlängerung gutschreiben (nach Tier)
-            const u = await dbGet('SELECT id, premium_tier FROM users WHERE stripe_customer_id=?', [customerId]);
-            const tier = (u?.premium_tier || '').toLowerCase();
-            const grant = tier === 'big' ? 50 : tier === 'small' ? 10 : 0;
-            if (u?.id && grant > 0) {
-              await dbRun('UPDATE users SET coins = coins + ? WHERE id=?', [grant, u.id]);
-            }
-            console.log(`🔄 Abo verlängert für Customer: ${customerId}`);
+            console.log(`🔄 Abo/Zahlung für Customer: ${customerId}`);
             break;
           }
 
