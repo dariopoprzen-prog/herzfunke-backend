@@ -165,6 +165,10 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   transition: background .15s;
 }
 .btn-secondary:hover { background: var(--bg3); }
+.mobile-profile-actions { display: none; gap: 10px; align-items: center; flex-wrap: wrap; }
+.mobile-profile-actions .btn-primary,
+.mobile-profile-actions .btn-secondary,
+.mobile-profile-actions .btn-logout { width: 100%; }
 
 /* ===== APP LAYOUT ===== */
 .app {
@@ -683,6 +687,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   /* Nav ~70px + kleine Rechtszeile darüber */
   .main-content { padding-bottom: 122px; }
   .page { padding: 24px 16px; }
+  .mobile-profile-actions { display: flex; }
   /* Chat: Liste + Vorschau wie Desktop, nur bei geöffnetem Gespräch Vollbild (Desktop: immer Sidebar) */
   .chat-layout {
     display: flex;
@@ -945,6 +950,10 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
       <div id="page-profile" class="page">
         <div class="page-header">
           <h1>Mein Profil</h1>
+        </div>
+        <div class="mobile-profile-actions" style="margin: 4px 0 18px;">
+          <button class="btn-primary" onclick="openPremium()">💎 Premium werden</button>
+          <button class="btn-logout" onclick="handleLogout()">Abmelden</button>
         </div>
         <div class="profile-container">
           <div class="profile-photo-section">
