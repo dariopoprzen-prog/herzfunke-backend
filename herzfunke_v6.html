@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0d0d14"/>
   <title>Herzfunke – Echte Verbindungen</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -29,6 +30,12 @@
 /* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: clip;
+  max-width: 100%;
+}
 body {
   background: var(--bg);
   color: var(--text);
@@ -164,6 +171,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   display: grid;
   grid-template-columns: 240px 1fr;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ===== SIDEBAR ===== */
@@ -453,6 +461,11 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   background: var(--bg2);
 }
 .chat-header-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+/* Nur auf schmalen Screens sichtbar (siehe @media); Desktop unverändert */
+.chat-back-btn {
+  display: none;
+  flex-shrink: 0;
+}
 .chat-empty-hint {
   text-align: center;
   color: var(--text3);
@@ -670,11 +683,67 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   /* Nav ~70px + kleine Rechtszeile darüber */
   .main-content { padding-bottom: 122px; }
   .page { padding: 24px 16px; }
-  .chat-layout { grid-template-columns: 1fr; }
-  .chat-list { display: none; }
-  #page-chat { height: calc(100vh - 70px); }
+  /* Chat: Liste + Vorschau wie Desktop, nur bei geöffnetem Gespräch Vollbild (Desktop: immer Sidebar) */
+  .chat-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+  .chat-layout:not(.chat-thread-open) .chat-list {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    max-height: 44vh;
+    min-height: 0;
+    overflow: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-layout:not(.chat-thread-open) .chat-list #chatListItems {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chat-layout:not(.chat-thread-open) .chat-window {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-layout.chat-thread-open .chat-list {
+    display: none !important;
+  }
+  .chat-layout.chat-thread-open .chat-window {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+  #page-chat { height: calc(100vh - 70px); height: calc(100dvh - 70px); }
   #page-chat .chat-input-area { bottom: 70px; }
   #page-chat .chat-messages { padding-bottom: 180px; }
+  .chat-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin: -6px 8px -6px -10px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 28px;
+    line-height: 1;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    cursor: pointer;
+  }
+  .chat-back-btn:active { opacity: 0.75; }
+  /* ≥16px verhindert iOS-Zoom beim Fokus in Eingabefeldern */
+  input, textarea, select { font-size: 16px; }
+  .btn, button, .nav-btn { touch-action: manipulation; }
 }
 @media (max-width: 500px) {
   .auth-card { padding: 36px 24px; }
@@ -866,7 +935,7 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
             <div class="chat-empty">
               <div class="chat-empty-icon">💬</div>
               <h3>Wähle ein Gespräch</h3>
-              <p>Klicke auf einen Match, um zu chatten</p>
+              <p>Wähle unten in der Liste oder öffne einen Chat über „Matches“</p>
             </div>
           </div>
         </div>
@@ -1419,6 +1488,8 @@ function saveSession(user, tok) {
 
 function handleLogout() {
   disconnectChatSocket();
+  activeChat = null;
+  document.querySelector('#page-chat .chat-layout')?.classList.remove('chat-thread-open');
   if (unreadPollTimer) { clearInterval(unreadPollTimer); unreadPollTimer = null; }
   if (matchSyncTimer) { clearInterval(matchSyncTimer); matchSyncTimer = null; }
   likedTeamProfileIds.clear();
@@ -1547,6 +1618,7 @@ function connectChatSocket() {
           <p style="color:var(--text2);font-size:14px;text-align:center;padding:0 24px">Dieses Gespräch wurde entfernt.</p>
         </div>`;
       }
+      syncChatLayoutThreadClass();
     }
     loadChats().catch(() => {});
     loadMatches().catch(() => {});
@@ -1698,6 +1770,7 @@ function showPage(page, btn) {
 
   if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
   if (page === 'chat') {
+    syncChatLayoutThreadClass();
     chatPollTimer = setInterval(() => reloadActiveChatMessages(), 2500);
     refreshUnreadBadge();
     loadChats().catch(() => {});
@@ -2020,6 +2093,29 @@ function renderMatches() {
 }
 
 // ===== CHAT =====
+function syncChatLayoutThreadClass() {
+  const layout = document.querySelector('#page-chat .chat-layout');
+  if (!layout) return;
+  if (activeChat?.matchId) layout.classList.add('chat-thread-open');
+  else layout.classList.remove('chat-thread-open');
+}
+
+function mobileChatBack() {
+  activeChat = null;
+  const win = document.getElementById('chatWindow');
+  if (win) {
+    win.innerHTML = `
+    <div class="chat-empty">
+      <div class="chat-empty-icon">💬</div>
+      <h3>Wähle ein Gespräch</h3>
+      <p>Wähle unten in der Liste oder öffne einen Chat über „Matches“</p>
+    </div>`;
+  }
+  document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+  syncChatLayoutThreadClass();
+  loadChats().catch(() => {});
+}
+
 async function loadChats() {
   const items = document.getElementById('chatListItems');
   if (!items) return;
@@ -2049,6 +2145,7 @@ async function openMatchChat(matchId, name, photo) {
     : `<div class="chat-avatar chat-avatar-empty" aria-hidden="true"></div>`;
   win.innerHTML = `
     <div class="chat-header">
+      <button type="button" class="chat-back-btn" onclick="mobileChatBack()" aria-label="Zurück zur Nachrichtenliste">‹</button>
       <div class="chat-header-main">
         ${headerAv}
         <div>
@@ -2077,6 +2174,7 @@ async function openMatchChat(matchId, name, photo) {
   const box = document.getElementById('chatMessages');
   if (box) box.innerHTML = '';
   if (socket?.connected) socket.emit('join_match', Number(matchId));
+  syncChatLayoutThreadClass();
   await reloadActiveChatMessages(true);
 }
 
