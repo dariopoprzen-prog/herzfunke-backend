@@ -748,13 +748,158 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   .chat-back-btn:active { opacity: 0.75; }
   /* ≥16px verhindert iOS-Zoom beim Fokus in Eingabefeldern */
   input, textarea, select { font-size: 16px; }
-  .btn, button, .nav-btn { touch-action: manipulation; }
+  .btn, button, .nav-btn, .prechat-send { touch-action: manipulation; }
 }
 @media (max-width: 500px) {
   .auth-card { padding: 36px 24px; }
   .fields-row { grid-template-columns: 1fr; }
 }
 
+/* ===== PRE-LOGIN TEASER CHAT (vor Login/Registrierung) ===== */
+.prelogin-teaser {
+  position: fixed;
+  inset: 0;
+  z-index: 12500;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+.prelogin-teaser.active {
+  display: flex;
+  pointer-events: auto;
+}
+.prelogin-teaser-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 15, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.prelogin-teaser-panel {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  max-height: min(72vh, 520px);
+  max-height: min(72dvh, 520px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: preChatPop 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes preChatPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.prelogin-teaser-head {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.prelogin-teaser-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--rose2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.prelogin-teaser-head h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.2;
+}
+.prelogin-teaser-head span {
+  display: block;
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+.prelogin-teaser-msgs {
+  flex: 1;
+  min-height: 140px;
+  overflow-y: auto;
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.prechat-bubble {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.prechat-bubble.bot {
+  align-self: flex-start;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 6px;
+}
+.prechat-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--rose), var(--rose2));
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+.prelogin-teaser-foot {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.prelogin-teaser-foot .prechat-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.prelogin-teaser-foot input {
+  flex: 1;
+  border-radius: 22px;
+  padding: 11px 16px;
+  font-size: 16px;
+}
+.prelogin-teaser-foot .prechat-send {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--rose2));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(232, 96, 122, 0.35);
+  transition: transform 0.15s;
+}
+.prelogin-teaser-foot .prechat-send:active { transform: scale(0.96); }
+.prelogin-teaser-foot .prechat-send svg { width: 18px; height: 18px; fill: currentColor; }
+.prelogin-teaser-skip {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.prelogin-teaser-skip a { cursor: pointer; }
 
     .filter-bar { display: flex; gap: 10px; margin-bottom: 24px; }
     .filter-btn { padding: 8px 20px; border-radius: 30px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font-body); font-size: 13px; cursor: pointer; transition: all .2s; }
@@ -765,8 +910,32 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
 </head>
 <body>
 
+  <!-- ===== PRE-LOGIN TEASER (Chat vor Login) ===== -->
+  <div id="preLoginTeaser" class="prelogin-teaser" aria-hidden="true">
+    <div class="prelogin-teaser-backdrop" aria-hidden="true"></div>
+    <div class="prelogin-teaser-panel" role="dialog" aria-modal="true" aria-labelledby="preChatTitle" onclick="event.stopPropagation()">
+      <div class="prelogin-teaser-head">
+        <div class="prelogin-teaser-avatar" aria-hidden="true">♡</div>
+        <div>
+          <h3 id="preChatTitle">Herzfunke</h3>
+          <span>Neue Nachricht</span>
+        </div>
+      </div>
+      <div id="preChatMessages" class="prelogin-teaser-msgs"></div>
+      <div class="prelogin-teaser-foot">
+        <div class="prechat-input-row">
+          <input type="text" id="preChatInput" maxlength="500" placeholder="Nachricht schreiben…" autocomplete="off" enterkeyhint="send" />
+          <button type="button" class="prechat-send" id="preChatSendBtn" onclick="handlePreChatSend()" aria-label="Senden">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+        <p class="prelogin-teaser-skip">Bereits registriert? <a onclick="skipPreLoginTeaserToLogin()">Anmelden</a></p>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== AUTH OVERLAY ===== -->
-  <div id="authOverlay" class="auth-overlay active">
+  <div id="authOverlay" class="auth-overlay">
     <div class="auth-bg">
       <div class="auth-orb orb1"></div>
       <div class="auth-orb orb2"></div>
@@ -1312,6 +1481,8 @@ const chatListLocalUnread = new Map();
 /** Letzte /matches-Liste für sofortiges Neuzeichnen ohne Fetch */
 let lastMatchesListForChat = [];
 let unreadPollTimer = null;
+/** 0 = erste Nutzerantwort erwartet, 1 = zweite Senden → Registrierung */
+let preChatStep = 0;
 
 function normalizeInterests(value) {
   if (Array.isArray(value)) return value.filter(Boolean).map(String);
@@ -1367,6 +1538,87 @@ const demoMatches = [
   { id: 2, name: 'Mia', age: 24, city: 'Hamburg', photo: 'https://i.pravatar.cc/300?img=45', isNew: false },
 ];
 
+function hidePreLoginTeaser() {
+  const t = document.getElementById('preLoginTeaser');
+  if (!t) return;
+  t.classList.remove('active');
+  t.setAttribute('aria-hidden', 'true');
+}
+
+function appendPreChatBubble(text, who) {
+  const msgs = document.getElementById('preChatMessages');
+  if (!msgs) return;
+  const b = document.createElement('div');
+  b.className = 'prechat-bubble ' + (who === 'user' ? 'user' : 'bot');
+  b.textContent = text;
+  msgs.appendChild(b);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function openPreLoginTeaser() {
+  preChatStep = 0;
+  const msgs = document.getElementById('preChatMessages');
+  if (msgs) msgs.innerHTML = '';
+  const input = document.getElementById('preChatInput');
+  if (input) input.value = '';
+  document.getElementById('authOverlay')?.classList?.remove('active');
+  document.getElementById('app')?.classList?.add('hidden');
+  const root = document.getElementById('preLoginTeaser');
+  root?.classList.add('active');
+  root?.setAttribute('aria-hidden', 'false');
+  setTimeout(() => appendPreChatBubble('Hey – kennen wir uns nicht von wo?', 'bot'), 400);
+  setTimeout(() => {
+    try {
+      document.getElementById('preChatInput')?.focus();
+    } catch (_) {}
+  }, 450);
+}
+
+function handlePreChatSend() {
+  const input = document.getElementById('preChatInput');
+  const raw = (input?.value ?? '').trim();
+  const text = raw || '…';
+
+  if (preChatStep === 0) {
+    appendPreChatBubble(text, 'user');
+    if (input) input.value = '';
+    preChatStep = 1;
+    setTimeout(
+      () =>
+        appendPreChatBubble(
+          'Dachte ich mir aber, wir könnten uns noch besser kennenlernen.',
+          'bot'
+        ),
+      520
+    );
+    return;
+  }
+  if (preChatStep === 1) {
+    appendPreChatBubble(text, 'user');
+    if (input) input.value = '';
+    preChatFinaleRegister();
+  }
+}
+
+function preChatFinaleRegister() {
+  hidePreLoginTeaser();
+  document.getElementById('app')?.classList?.add('hidden');
+  document.getElementById('authOverlay')?.classList.add('active');
+  showRegister();
+  setTimeout(() => {
+    try {
+      document.getElementById('regName')?.focus();
+    } catch (_) {}
+  }, 120);
+}
+
+function skipPreLoginTeaserToLogin() {
+  hidePreLoginTeaser();
+  document.getElementById('app')?.classList?.add('hidden');
+  document.getElementById('authOverlay')?.classList.add('active');
+  showLogin();
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   // Demo/alte Tokens blocken (sonst gehen Payments mit 401 kaputt)
@@ -1378,10 +1630,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const requireAuth = () => {
+    hidePreLoginTeaser();
     document.getElementById('app')?.classList?.add('hidden');
     document.getElementById('authOverlay')?.classList?.add('active');
     showLogin();
   };
+
+  const inp = document.getElementById('preChatInput');
+  if (inp) {
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handlePreChatSend();
+      }
+    });
+  }
 
   if (currentUser && token) {
     // Token kurz validieren (sonst "Token ungültig" später bei Payments)
@@ -1399,7 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         requireAuth();
       });
   } else {
-    requireAuth();
+    openPreLoginTeaser();
   }
 });
 
@@ -1507,6 +1770,7 @@ function handleLogout() {
   localStorage.removeItem('hf_user');
   localStorage.removeItem('hf_token');
   currentUser = null; token = null;
+  hidePreLoginTeaser();
   document.getElementById('app').classList.add('hidden');
   document.getElementById('authOverlay').classList.add('active');
   showLogin();
@@ -1516,6 +1780,7 @@ function handleLogout() {
 
 // ===== APP =====
 function showApp() {
+  hidePreLoginTeaser();
   document.getElementById('authOverlay').classList.remove('active');
   document.getElementById('app').classList.remove('hidden');
   loadDiscover();
@@ -2563,6 +2828,7 @@ async function buyProduct(productId, btn) {
         localStorage.removeItem('hf_token');
         currentUser = null;
         token = null;
+        hidePreLoginTeaser();
         document.getElementById('app')?.classList?.add('hidden');
         document.getElementById('authOverlay')?.classList?.add('active');
         showLogin();
