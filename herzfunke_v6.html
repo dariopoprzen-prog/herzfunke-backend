@@ -806,16 +806,20 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   background: var(--bg2);
   flex-shrink: 0;
 }
-.prelogin-teaser-avatar {
+.prelogin-teaser-head-photo {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--rose), var(--rose2));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
+  object-fit: cover;
   flex-shrink: 0;
+  background: var(--bg3);
+  border: 2px solid rgba(232, 96, 122, 0.45);
+  box-sizing: border-box;
+}
+.prechat-head-status {
+  font-size: 12px;
+  color: #50e090;
+  margin-top: 2px;
 }
 .prelogin-teaser-head h3 {
   font-family: var(--font-display);
@@ -840,23 +844,45 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   gap: 10px;
   -webkit-overflow-scrolling: touch;
 }
+.prechat-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 100%;
+  align-self: flex-start;
+  animation: msgIn 0.2s ease;
+}
+.prechat-row-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.prechat-user-wrap {
+  align-self: flex-end;
+  max-width: 88%;
+  animation: msgIn 0.2s ease;
+}
 .prechat-bubble {
-  max-width: 92%;
+  max-width: 100%;
   padding: 10px 14px;
   border-radius: 16px;
   font-size: 14px;
   line-height: 1.45;
   word-break: break-word;
 }
-.prechat-bubble.bot {
-  align-self: flex-start;
+.prechat-row .prechat-bubble.bot {
+  max-width: min(260px, calc(100vw - 120px));
   background: var(--bg3);
   border: 1px solid var(--border);
   color: var(--text);
   border-bottom-left-radius: 6px;
 }
 .prechat-bubble.user {
-  align-self: flex-end;
   background: linear-gradient(135deg, var(--rose), var(--rose2));
   color: #fff;
   border-bottom-right-radius: 6px;
@@ -915,10 +941,10 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
     <div class="prelogin-teaser-backdrop" aria-hidden="true"></div>
     <div class="prelogin-teaser-panel" role="dialog" aria-modal="true" aria-labelledby="preChatTitle" onclick="event.stopPropagation()">
       <div class="prelogin-teaser-head">
-        <div class="prelogin-teaser-avatar" aria-hidden="true">♡</div>
+        <img id="preChatHeaderAvatar" class="prelogin-teaser-head-photo" src="https://i.pravatar.cc/150?img=47" alt="" width="40" height="40" decoding="async" />
         <div>
-          <h3 id="preChatTitle">Herzfunke</h3>
-          <span>Neue Nachricht</span>
+          <h3 id="preChatTitle">Sophie</h3>
+          <span id="preChatSubtitle" class="prechat-head-status">● Online</span>
         </div>
       </div>
       <div id="preChatMessages" class="prelogin-teaser-msgs"></div>
@@ -1460,6 +1486,8 @@ button { cursor: pointer; border: none; font-family: var(--font-body); }
   <script>
 // ===== CONFIG =====
 const API = (localStorage.getItem('hf_api') || `${window.location.origin}/api`).replace(/\/+$/, '');
+/** Anzeige im Pre-Login-Chat (Name + Foto wie im echten Chat-Header) */
+const PRECHAT_PEER = { name: 'Sophie', photo: 'https://i.pravatar.cc/150?img=47' };
 
 // ===== STATE =====
 let currentUser = JSON.parse(localStorage.getItem('hf_user') || 'null');
@@ -1545,18 +1573,54 @@ function hidePreLoginTeaser() {
   t.setAttribute('aria-hidden', 'true');
 }
 
+function applyPreChatPeerUi() {
+  const img = document.getElementById('preChatHeaderAvatar');
+  const t = document.getElementById('preChatTitle');
+  const sub = document.getElementById('preChatSubtitle');
+  if (img) {
+    img.src = PRECHAT_PEER.photo;
+    img.alt = PRECHAT_PEER.name;
+  }
+  if (t) t.textContent = PRECHAT_PEER.name;
+  if (sub) {
+    sub.className = 'prechat-head-status';
+    sub.textContent = '● Online';
+  }
+}
+
 function appendPreChatBubble(text, who) {
   const msgs = document.getElementById('preChatMessages');
   if (!msgs) return;
-  const b = document.createElement('div');
-  b.className = 'prechat-bubble ' + (who === 'user' ? 'user' : 'bot');
-  b.textContent = text;
-  msgs.appendChild(b);
+  if (who === 'user') {
+    const wrap = document.createElement('div');
+    wrap.className = 'prechat-user-wrap';
+    const b = document.createElement('div');
+    b.className = 'prechat-bubble user';
+    b.textContent = text;
+    wrap.appendChild(b);
+    msgs.appendChild(wrap);
+  } else {
+    const row = document.createElement('div');
+    row.className = 'prechat-row';
+    const av = document.createElement('img');
+    av.className = 'prechat-row-av';
+    av.src = PRECHAT_PEER.photo;
+    av.alt = '';
+    av.decoding = 'async';
+    av.setAttribute('aria-hidden', 'true');
+    const b = document.createElement('div');
+    b.className = 'prechat-bubble bot';
+    b.textContent = text;
+    row.appendChild(av);
+    row.appendChild(b);
+    msgs.appendChild(row);
+  }
   msgs.scrollTop = msgs.scrollHeight;
 }
 
 function openPreLoginTeaser() {
   preChatStep = 0;
+  applyPreChatPeerUi();
   const msgs = document.getElementById('preChatMessages');
   if (msgs) msgs.innerHTML = '';
   const input = document.getElementById('preChatInput');
